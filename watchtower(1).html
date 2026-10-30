@@ -1,0 +1,4539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Watchtower · 見張り台 — Stargazing & Celestial Map</title>
+<link rel="stylesheet" href="page-transitions.css">
+<script src="page-transitions.js" defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Sawarabi+Mincho&family=Cinzel:wght@600;700;900&family=Yuji+Syuku&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════
+   DESIGN SYSTEM: TSUKUYOMI WATCH AESTHETIC (from index.html)
+   Layered Ink-Wash, Vermilion Lacquer, Gold Shimmer,
+   Deep Shadows, Smooth Transitions & Rive Animations
+══════════════════════════════════════════════════════════ */
+:root {
+  --bg-deep: #0a0a0a;
+  --bg-card: linear-gradient(145deg, rgba(20, 11, 11, 0.96), rgba(11, 6, 6, 0.98));
+  --bg-card-hover: linear-gradient(145deg, rgba(30, 16, 16, 0.98), rgba(16, 9, 9, 0.99));
+  --ink: #0a0a0a;
+  --ink-light: #181010;
+  --vermilion: #8b0000;
+  --vermilion-bright: #e62b3c;
+  --vermilion-glow: rgba(139, 0, 0, 0.45);
+  --gold: #ffd700;
+  --gold-dark: #b8860b;
+  --gold-glow: rgba(255, 215, 0, 0.35);
+  --text-main: #f5e6c8;
+  --text-muted: rgba(245, 230, 200, 0.72);
+  --text-dim: rgba(245, 230, 200, 0.45);
+  --cream: #f5e6c8;
+  --pink: #c9506b;
+  --jade: #2fa872;
+  --border-gold: rgba(184, 134, 11, 0.42);
+  --border-crimson: rgba(139, 0, 0, 0.48);
+  --border-subtle: rgba(184, 134, 11, 0.22);
+  --shadow-card: 0 15px 40px rgba(0, 0, 0, 0.72), 0 0 25px rgba(139, 0, 0, 0.15);
+  --font-heading: 'Cinzel Decorative', 'Noto Serif JP', serif;
+  --font-body: 'Sawarabi Mincho', 'Noto Serif JP', serif;
+  --font-num: 'Cinzel Decorative', 'Cinzel', serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) var(--ink-light);
+}
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: var(--ink-light); }
+::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg-deep);
+  color: var(--text-main);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════
+   BACKGROUND LAYERS (Inspired by index.html)
+═══════════════════════════════════════════ */
+.bg-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+
+.bg-ink {
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(139,0,0,0.14) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(184,134,11,0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, #120b0b 0%, #0a0a0a 100%);
+}
+
+.bg-scene {
+  opacity: 0.18;
+  z-index: 1;
+}
+
+#bg-stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.65;
+}
+
+#petals {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ── Side Decorative Kanji (from index.html) ── */
+.side-kanji {
+  position: fixed;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.35rem;
+  writing-mode: vertical-rl;
+  color: rgba(139,0,0,0.16);
+  letter-spacing: 0.6em;
+  z-index: 5;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 0 10px rgba(184,134,11,0.08);
+}
+.side-kanji.left  { left: 1.2rem; top: 50%; transform: translateY(-50%); }
+.side-kanji.right { right: 1.2rem; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 800px) {
+  .side-kanji { display: none; }
+}
+
+/* ═══════════════════════════════════════════
+   HEADER & NAVIGATION
+═══════════════════════════════════════════ */
+header {
+  text-align: center;
+  padding: 1.8rem 1rem 0.6rem;
+  position: relative;
+  z-index: 25;
+}
+
+
+/* ═══════════════════════════════════════════
+   TOP-LEFT TSUKUYOMI DROPDOWN NAVIGATION MENU
+═══════════════════════════════════════════ */
+.tsukuyomi-nav-dropdown {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 1000;
+  font-family: 'Cinzel Decorative', serif;
+}
+
+.nav-dropdown-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  background: rgba(18, 9, 9, 0.92);
+  border: 1.5px solid var(--vermilion);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(139, 0, 0, 0.3);
+}
+
+.nav-dropdown-trigger:hover,
+.tsukuyomi-nav-dropdown.open .nav-dropdown-trigger {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.35), inset 0 0 16px rgba(139, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.nav-trigger-arrow {
+  font-size: 0.72rem;
+  transition: transform 0.3s ease;
+  color: var(--gold-dark);
+}
+
+.tsukuyomi-nav-dropdown.open .nav-trigger-arrow {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+
+.nav-dropdown-trigger .corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: var(--gold);
+  border-style: solid;
+  transition: all 0.3s ease;
+}
+.nav-dropdown-trigger .corner.tl { top: 2px; left: 2px; border-width: 1.5px 0 0 1.5px; }
+.nav-dropdown-trigger .corner.tr { top: 2px; right: 2px; border-width: 1.5px 1.5px 0 0; }
+.nav-dropdown-trigger .corner.bl { bottom: 2px; left: 2px; border-width: 0 0 1.5px 1.5px; }
+.nav-dropdown-trigger .corner.br { bottom: 2px; right: 2px; border-width: 0 1.5px 1.5px 0; }
+
+.nav-dropdown-trigger:hover .corner,
+.tsukuyomi-nav-dropdown.open .corner {
+  width: 13px;
+  height: 13px;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 310px;
+  background: linear-gradient(155deg, rgba(22, 11, 11, 0.98), rgba(11, 6, 6, 0.99));
+  border: 1.5px solid rgba(184, 134, 11, 0.45);
+  border-radius: 4px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(139, 0, 0, 0.3);
+  backdrop-filter: blur(14px);
+  padding: 8px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.28s ease;
+  pointer-events: none;
+}
+
+.tsukuyomi-nav-dropdown.open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.nav-dropdown-header {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--gold-dark);
+  text-align: center;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid rgba(139, 0, 0, 0.3);
+}
+
+.nav-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: var(--text-main);
+  border-bottom: 1px solid rgba(139, 0, 0, 0.15);
+  transition: all 0.25s ease;
+}
+
+.nav-menu-item:last-child {
+  border-bottom: none;
+}
+
+.nav-menu-item:hover {
+  background: rgba(139, 0, 0, 0.2);
+  color: var(--gold);
+  padding-left: 20px;
+}
+
+.nav-menu-item.active {
+  background: rgba(184, 134, 11, 0.12);
+  border-left: 3px solid var(--gold);
+}
+
+.nav-menu-icon {
+  font-size: 1.3rem;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-menu-info {
+  flex: 1;
+}
+
+.nav-menu-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-main);
+  transition: color 0.25s ease;
+}
+
+.nav-menu-item:hover .nav-menu-title,
+.nav-menu-item.active .nav-menu-title {
+  color: var(--gold);
+}
+
+.nav-menu-desc {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.nav-menu-arrow {
+  color: rgba(184, 134, 11, 0.5);
+  font-size: 1.1rem;
+  transition: all 0.25s ease;
+}
+
+.nav-menu-item:hover .nav-menu-arrow {
+  color: var(--gold);
+  transform: translateX(3px);
+}
+
+.nav-menu-badge {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--bg-deep);
+  background: var(--gold);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+@media (max-width: 760px) {
+  .tsukuyomi-nav-dropdown {
+    position: static;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+}
+
+.top-nav-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  max-width: 1280px;
+  margin: 0 auto 0.6rem;
+  padding: 0 1rem;
+}
+
+.eyebrow-pill {
+  color: var(--gold-dark);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font: 700 0.76rem/1.6 'Cinzel Decorative', serif;
+  background: rgba(30, 15, 15, 0.6);
+  border: 1px solid rgba(184, 134, 11, 0.35);
+  padding: 4px 14px;
+  border-radius: 20px;
+  box-shadow: 0 0 15px rgba(139, 0, 0, 0.2);
+}
+
+.page-description {
+  max-width: 760px;
+  margin: 0.6rem auto 1.2rem;
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+/* ── Interactive Rive Celestial Crest ── */
+.header-crest-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0.5rem auto 0.2rem;
+}
+
+.rive-crest-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 25px rgba(184, 134, 11, 0.4)) drop-shadow(0 0 45px rgba(139, 0, 0, 0.3));
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s ease;
+  animation: floatCrest 4s ease-in-out infinite;
+}
+
+@keyframes floatCrest {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+
+.rive-crest-wrapper:hover {
+  transform: translateY(-4px) scale(1.07);
+  filter: drop-shadow(0 0 35px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 55px rgba(139, 0, 0, 0.5));
+}
+
+.rive-crest-wrapper.pulse {
+  animation: crestPulse 0.7s ease;
+}
+
+@keyframes crestPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15) rotate(4deg); }
+  100% { transform: scale(1); }
+}
+
+.rive-canvas {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: block;
+}
+
+.crest-torii-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.9));
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0.88;
+}
+
+.rive-crest-wrapper:hover .crest-torii-overlay {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.rive-glow-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 215, 0, 0.4);
+  pointer-events: none;
+  animation: rotateRing 20s linear infinite;
+}
+
+@keyframes rotateRing {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── App Title & Katana Divider (from index.html) ── */
+.app-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(2rem, 5.5vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  margin: 0.2rem 0 0.3rem;
+  background: linear-gradient(135deg, #ffd700 0%, #ff4500 30%, #ffd700 50%, #ff4500 70%, #ffd700 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerGold 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.2));
+}
+
+@keyframes shimmerGold {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.subtitle-kanji {
+  font-family: 'Noto Serif JP', serif;
+  font-size: clamp(0.95rem, 2vw, 1.3rem);
+  color: var(--vermilion);
+  letter-spacing: 0.5em;
+  margin: 0.1rem 0 0.3rem;
+  text-shadow: 0 0 12px rgba(139, 0, 0, 0.5);
+}
+
+.subtitle {
+  font-family: 'Cinzel Decorative', 'Noto Serif JP', serif;
+  font-size: 0.88rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+  font-weight: 600;
+}
+
+.katana-divider {
+  width: min(340px, 85vw);
+  margin: 0.8rem auto 1.2rem;
+  opacity: 0.75;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
+}
+
+/* ═══════════════════════════════════════════
+   SEARCH CONTAINER & CONTROLS
+═══════════════════════════════════════════ */
+.search-container {
+  max-width: 820px;
+  margin: 0 auto 1.2rem;
+  padding: 0 1rem;
+  position: relative;
+  z-index: 30;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(16, 9, 9, 0.95);
+  border: 1.5px solid var(--border-gold);
+  border-radius: 50px;
+  padding: 0.35rem 0.5rem 0.35rem 1.2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(184, 134, 11, 0.15);
+  backdrop-filter: blur(14px);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  gap: 0.5rem;
+}
+
+.search-box:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 10px 40px rgba(255, 215, 0, 0.25), 0 0 0 2px rgba(184, 134, 11, 0.4);
+  transform: translateY(-2px);
+}
+
+.search-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--gold);
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+#q {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: 0.4rem 0.2rem;
+  min-width: 140px;
+}
+#q::placeholder { color: var(--text-dim); }
+
+.btn-search {
+  background: linear-gradient(135deg, #8b0000 0%, #c1121f 50%, #8b0000 100%);
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  border-radius: 40px;
+  padding: 0.55rem 1.4rem;
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: 0 4px 18px var(--vermilion-glow);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-search:hover {
+  background: linear-gradient(135deg, #a00000, #e62b3c);
+  transform: scale(1.04);
+  box-shadow: 0 6px 24px rgba(230, 43, 60, 0.6), 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.btn-geo {
+  background: rgba(26, 13, 13, 0.92);
+  color: var(--text-main);
+  border: 1px solid var(--border-gold);
+  border-radius: 40px;
+  padding: 0.55rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-geo:hover {
+  background: rgba(45, 20, 20, 0.95);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: scale(1.03);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+.preset-chips {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.preset-chip {
+  background: rgba(22, 11, 11, 0.85);
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 0.28rem 0.85rem;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.preset-chip:hover {
+  background: rgba(139, 0, 0, 0.32);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.2);
+}
+
+#status {
+  text-align: center;
+  color: var(--gold);
+  min-height: 1.4em;
+  font-size: 0.94rem;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.35);
+  position: relative;
+  z-index: 25;
+}
+
+/* ═══════════════════════════════════════════
+   ACTIVE SPOT BANNER
+═══════════════════════════════════════════ */
+.active-banner {
+  max-width: 1280px;
+  margin: 0 auto 1.1rem;
+  padding: 0 1rem;
+  display: none;
+}
+.active-banner.visible { display: block; animation: fadeInDown 0.35s ease; }
+
+.active-banner-inner {
+  background: linear-gradient(90deg, rgba(139, 0, 0, 0.32), rgba(184, 134, 11, 0.22), rgba(18, 9, 9, 0.95));
+  border: 1.5px solid var(--gold);
+  border-radius: 4px;
+  padding: 0.85rem 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(184, 134, 11, 0.2);
+}
+
+.active-spot-text {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.98rem;
+}
+.active-spot-badge {
+  background: var(--vermilion);
+  color: var(--gold);
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.74rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--gold);
+}
+
+.btn-reset-view {
+  background: rgba(14, 8, 8, 0.92);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  border-radius: 4px;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.btn-reset-view:hover {
+  background: var(--gold);
+  color: var(--ink);
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   MAIN LAYOUT & PANELS
+═══════════════════════════════════════════ */
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 1.4rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem 2.5rem;
+  position: relative;
+  z-index: 25;
+}
+
+@media (max-width: 960px) {
+  main { grid-template-columns: 1fr; }
+}
+
+.col-left, .col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+/* ── Panel Design with Corner Brackets (from index.html) ── */
+.panel {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  padding: 1.35rem;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.panel:hover {
+  border-color: rgba(255, 215, 0, 0.6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.78), 0 0 30px rgba(184, 134, 11, 0.22);
+  transform: translateY(-2px);
+}
+
+.panel::before, .panel::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--gold);
+  border-style: solid;
+  pointer-events: none;
+  transition: all 0.35s ease;
+}
+.panel::before {
+  top: 5px;
+  left: 5px;
+  border-width: 1.5px 0 0 1.5px;
+}
+.panel::after {
+  bottom: 5px;
+  right: 5px;
+  border-width: 0 1.5px 1.5px 0;
+}
+.panel:hover::before, .panel:hover::after {
+  width: 22px;
+  height: 22px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(139, 0, 0, 0.45);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.panel-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.panel h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 16px rgba(255, 215, 0, 0.2);
+}
+
+.panel h2 svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+/* ═══════════════════════════════════════════
+   JAPANESE HANGING SCROLL MAP (Makimono / Kakejiku)
+═══════════════════════════════════════════ */
+.scroll-wrapper {
+  position: relative;
+  padding: 22px 0;
+  margin: 0.3rem 0 0.6rem;
+}
+
+.scroll-roller {
+  position: absolute;
+  left: -14px;
+  right: -14px;
+  height: 22px;
+  background: linear-gradient(180deg, #421c10 0%, #1f0b06 40%, #522416 75%, #180804 100%);
+  border-radius: 11px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85), inset 0 1px 2px rgba(255, 200, 100, 0.3);
+  z-index: 50;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2px;
+}
+
+.scroll-roller::before, .scroll-roller::after {
+  content: "";
+  width: 18px;
+  height: 26px;
+  background: radial-gradient(circle, #f5d67a 0%, #b8860b 60%, #5c4308 100%);
+  border-radius: 4px;
+  border: 1px solid #ffe89e;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+.scroll-roller-top { top: 3px; }
+.scroll-roller-bottom { bottom: 3px; }
+
+.scroll-canvas {
+  background: #18110f;
+  border-left: 12px solid #5a141c;
+  border-right: 12px solid #5a141c;
+  border-top: 4px solid var(--gold-dark);
+  border-bottom: 4px solid var(--gold-dark);
+  border-radius: 4px;
+  position: relative;
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.85), 0 8px 32px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+#map {
+  height: 480px;
+  width: 100%;
+  background: #120e10;
+}
+
+.leaflet-container {
+  font-family: var(--font-body);
+  background: #120e10;
+}
+
+.ink-tiles {
+  filter: grayscale(0.85) sepia(0.65) contrast(1.18) brightness(0.92);
+}
+
+/* ── Custom Japanese Map Marker Pins ── */
+.kamon-pin {
+  width: 44px;
+  height: 44px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kamon-pin:hover {
+  transform: scale(1.18) translateY(-4px);
+  z-index: 1000 !important;
+}
+
+.kamon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(14, 8, 8, 0.96);
+  border: 2px solid var(--gold);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.85), 0 0 12px var(--gold-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.kamon-badge.selected {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px var(--vermilion), 0 0 24px var(--vermilion-glow);
+  animation: pulsePin 1.8s infinite;
+}
+
+.kamon-badge svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.kamon-score {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: linear-gradient(135deg, #8b0000, #c1121f);
+  color: #ffffff;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--gold);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.main-search-pin {
+  width: 42px;
+  height: 42px;
+  filter: drop-shadow(0 4px 12px rgba(139, 0, 0, 0.8));
+  animation: bouncePin 2s infinite ease-in-out;
+}
+
+@keyframes bouncePin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulsePin {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ── Leaflet Popups ── */
+.leaflet-popup-content-wrapper {
+  background: rgba(16, 9, 9, 0.98) !important;
+  color: var(--text-main) !important;
+  border-radius: 4px !important;
+  border: 1.5px solid var(--gold) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 25px var(--gold-glow) !important;
+  backdrop-filter: blur(12px) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(16, 9, 9, 0.98) !important;
+  border: 1.5px solid var(--gold) !important;
+}
+
+.leaflet-popup-content {
+  margin: 14px 18px !important;
+  line-height: 1.5;
+}
+
+.spot-popup {
+  font-family: var(--font-body);
+  min-width: 250px;
+}
+
+.spot-popup h3 {
+  font-family: var(--font-heading);
+  color: var(--gold);
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid rgba(139, 0, 0, 0.6);
+  padding-bottom: 0.35rem;
+  letter-spacing: 0.04em;
+}
+
+.sp-score-banner {
+  text-align: center;
+  padding: 0.45rem;
+  background: rgba(184, 134, 11, 0.15);
+  border: 1px solid rgba(184, 134, 11, 0.4);
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+}
+
+.sp-score-num {
+  font-family: var(--font-num);
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.sp-score-verdict {
+  font-size: 0.86rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.sp-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.26rem 0;
+  font-size: 0.92rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.09);
+}
+
+.sp-label { color: var(--text-muted); }
+.sp-val { color: #ffffff; font-weight: 600; }
+
+.sp-select-btn {
+  width: 100%;
+  margin-top: 0.8rem;
+  background: linear-gradient(135deg, #8b0000, #c1121f);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.sp-select-btn:hover {
+  background: linear-gradient(135deg, #a00000, #e62b3c);
+  box-shadow: 0 4px 16px var(--vermilion-glow);
+  transform: scale(1.02);
+}
+
+.leaflet-tooltip.spot-tooltip {
+  background: rgba(12, 7, 7, 0.98);
+  color: #ffffff;
+  border: 1px solid var(--gold);
+  font-family: var(--font-body);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+}
+
+/* ═══════════════════════════════════════════
+   NIGHT HONOR SCORE & METERS
+═══════════════════════════════════════════ */
+.score-wrap {
+  display: flex;
+  gap: 1.2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ring-wrapper {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  flex-shrink: 0;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.35));
+}
+
+.score-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-num);
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 20px var(--gold-glow);
+}
+
+.score-sublabel {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 700;
+}
+
+.score-meta {
+  flex: 1;
+  min-width: 180px;
+}
+
+.verdict {
+  font-size: 1.15rem;
+  color: var(--gold);
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: var(--font-heading);
+}
+
+.location-title-badge {
+  display: inline-block;
+  background: rgba(184, 134, 11, 0.15);
+  border: 1px solid var(--border-gold);
+  color: var(--cream);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+dl#wx {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.28rem 1rem;
+  margin: 0;
+  font-size: 0.94rem;
+}
+dt { color: var(--text-muted); }
+dd { margin: 0; text-align: right; color: var(--cream); font-weight: 600; }
+
+/* ── Light Pollution Meter ── */
+.lp-meter {
+  margin: 1.1rem 0 0.2rem;
+  background: rgba(12, 6, 6, 0.75);
+  padding: 0.85rem 1.1rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+.lp-meter-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.lp-meter-bar {
+  height: 16px;
+  border-radius: 8px;
+  background: linear-gradient(to right, #050c18, #0e1e38, #193836, #325828, #6f7818, #a85818, #c82818, #f01828);
+  position: relative;
+  border: 1px solid rgba(184, 134, 11, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.lp-meter-needle {
+  position: absolute;
+  top: -5px;
+  width: 4px;
+  height: 26px;
+  background: #ffffff;
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  transform: translateX(-50%);
+  transition: left 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 0 10px #ffffff, 0 0 18px var(--gold);
+}
+
+.bortle-label {
+  text-align: center;
+  color: var(--gold);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0.6rem 0 0;
+  font-family: var(--font-heading);
+}
+
+/* ═══════════════════════════════════════════
+   MOON PHASE & CELESTIAL TWILIGHT
+═══════════════════════════════════════════ */
+#moon {
+  display: flex;
+  gap: 1.4rem;
+  align-items: center;
+}
+#moon svg {
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 18px rgba(255, 215, 0, 0.35));
+}
+#moondl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.28rem 1rem;
+  margin: 0;
+  flex: 1;
+  font-size: 0.94rem;
+}
+
+/* ═══════════════════════════════════════════
+   TOP NEARBY SPOTS LIST
+═══════════════════════════════════════════ */
+.spots-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(139, 0, 0, 0.45);
+  padding-bottom: 0.6rem;
+}
+.spots-header h2 { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+
+.sort-select {
+  background: rgba(18, 9, 9, 0.95);
+  color: var(--gold);
+  border: 1.5px solid var(--gold);
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  padding: 0.4rem 1.6rem 0.4rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.sort-select:hover {
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+}
+
+#spots {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px 0 0;
+  height: 520px;
+  max-height: 520px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) rgba(20, 10, 10, 0.8);
+}
+#spots::-webkit-scrollbar { width: 6px; }
+#spots::-webkit-scrollbar-track { background: rgba(20, 10, 10, 0.8); }
+#spots::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+
+.spot-item {
+  background: linear-gradient(145deg, rgba(22, 12, 12, 0.94), rgba(12, 7, 7, 0.98));
+  border: 1.5px solid rgba(184, 134, 11, 0.28);
+  border-radius: 4px;
+  padding: 1.15rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  height: auto;
+  min-height: auto;
+  overflow: visible;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.spot-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background 0.25s;
+}
+
+.spot-item:hover {
+  background: linear-gradient(145deg, rgba(32, 16, 16, 0.96), rgba(18, 9, 9, 0.98));
+  border-color: var(--gold);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(184, 134, 11, 0.25);
+}
+
+.spot-item.active-spot {
+  background: linear-gradient(135deg, rgba(139, 0, 0, 0.35), rgba(28, 14, 14, 0.98));
+  border-color: var(--gold);
+  box-shadow: 0 0 25px var(--gold-glow), inset 0 0 20px rgba(139, 0, 0, 0.25);
+}
+.spot-item.active-spot::before {
+  background: var(--gold);
+}
+
+.spot-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.45rem;
+}
+
+.spot-category-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.spot-icon-mini {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(14, 8, 8, 0.95);
+  border: 1px solid var(--border-gold);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.spot-icon-mini svg { width: 17px; height: 17px; }
+
+.spot-dist-pill {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.84rem;
+  background: rgba(184, 134, 11, 0.12);
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  border-radius: 4px;
+  padding: 0.14rem 0.55rem;
+}
+
+.spot-bortle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  padding: 0.12rem 0.48rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.bortle-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.spot-score-pill {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  background: rgba(12, 6, 6, 0.9);
+  border: 1.5px solid var(--gold);
+  padding: 0.22rem 0.7rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.15);
+}
+.spot-score-num {
+  font-family: var(--font-num);
+  font-weight: 900;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--gold);
+}
+.spot-score-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.spot-title-area {
+  flex: 1;
+  padding: 0;
+  min-width: 0;
+}
+
+.spot-name-full {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  letter-spacing: 0.02em;
+}
+
+.spot-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.45rem;
+}
+
+.spot-type-tag {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.03em;
+}
+
+.spot-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+  gap: 0.45rem;
+  background: rgba(12, 6, 6, 0.7);
+  padding: 0.55rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid rgba(184, 134, 11, 0.15);
+  font-size: 0.86rem;
+}
+
+.spot-metric-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+}
+.spot-metric-val {
+  color: var(--cream);
+  font-weight: 600;
+}
+
+.spots-empty-placeholder {
+  padding: 2.2rem 1.4rem;
+  text-align: center;
+  background: rgba(16, 9, 9, 0.7);
+  border: 1.5px dashed var(--border-gold);
+  border-radius: 4px;
+}
+.spots-empty-placeholder p {
+  margin: 0.4rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.spots-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.4rem;
+}
+
+/* ═══════════════════════════════════════════
+   CELESTIAL STAR MAP (TENMON-ZU)
+═══════════════════════════════════════════ */
+.star-map-panel {
+  grid-column: 1 / -1;
+  padding: 1.4rem;
+}
+
+.star-map-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.star-map-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sky-btn {
+  background: rgba(20, 10, 10, 0.9);
+  border: 1px solid var(--border-gold);
+  color: var(--text-main);
+  border-radius: 4px;
+  padding: 0.45rem 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sky-btn:hover, .sky-btn.active {
+  background: rgba(184, 134, 11, 0.25);
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+}
+
+.star-canvas-container {
+  width: 100%;
+  height: 520px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, #0a0b16 0%, #05060b 80%, #020205 100%);
+  border: 1.5px solid var(--border-gold);
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9), 0 8px 30px rgba(0, 0, 0, 0.7);
+  cursor: grab;
+}
+.star-canvas-container:active { cursor: grabbing; }
+
+#sky-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sky-overlay-info {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  background: rgba(12, 7, 7, 0.92);
+  border: 1px solid var(--border-gold);
+  padding: 0.45rem 0.9rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.sky-zoom-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  z-index: 10;
+}
+
+.sky-zoom-btn {
+  width: 36px;
+  height: 36px;
+  background: rgba(18, 9, 9, 0.94);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  border-radius: 4px;
+  font-size: 1.25rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.sky-zoom-btn:hover {
+  background: var(--gold);
+  color: var(--ink);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.sky-legend {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 0.85rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sky-legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.sky-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ═══════════════════════════════════════════
+   NASA LIVE SPACE TELESCOPE MODAL (from index.html)
+═══════════════════════════════════════════ */
+.skyview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.skyview-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.skyview-modal-content {
+  position: relative;
+  z-index: 10;
+  background: linear-gradient(145deg, rgba(20, 10, 10, 0.98), rgba(10, 5, 5, 0.99));
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 215, 0, 0.25);
+  width: 100%;
+  max-width: 800px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 1.6rem;
+  animation: fadeInDown 0.3s ease;
+}
+
+.skyview-modal-content::before, .skyview-modal-content::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: var(--gold);
+  border-style: solid;
+  pointer-events: none;
+}
+.skyview-modal-content::before {
+  top: 8px;
+  left: 8px;
+  border-width: 2px 0 0 2px;
+}
+.skyview-modal-content::after {
+  bottom: 8px;
+  right: 8px;
+  border-width: 0 2px 2px 0;
+}
+
+.skyview-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1.5px solid rgba(139, 0, 0, 0.6);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.skyview-close-btn {
+  background: rgba(22, 11, 11, 0.85);
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.skyview-close-btn:hover {
+  background: var(--vermilion);
+  color: #fff;
+  border-color: #fff;
+  transform: rotate(90deg);
+}
+
+.skyview-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.9rem;
+}
+
+.skyview-preset-btn {
+  background: rgba(22, 11, 11, 0.9);
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  color: var(--text-muted);
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.skyview-preset-btn:hover, .skyview-preset-btn.active {
+  background: rgba(184, 134, 11, 0.25);
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+}
+
+.skyview-query-form {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background: rgba(12, 6, 6, 0.7);
+  padding: 0.8rem 1rem;
+  border-radius: 4px;
+  border: 1px solid rgba(184, 134, 11, 0.2);
+  margin-bottom: 1.1rem;
+}
+
+.skyview-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 170px;
+}
+.skyview-form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.skyview-form-group input, .skyview-form-group select {
+  background: rgba(18, 9, 9, 0.92);
+  border: 1px solid var(--border-gold);
+  color: #ffffff;
+  padding: 0.45rem 0.75rem;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  outline: none;
+}
+.skyview-form-group input:focus, .skyview-form-group select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+
+.skyview-viewer-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.skyview-image-container {
+  width: 100%;
+  height: 340px;
+  background: #020204;
+  border: 1.5px solid var(--border-gold);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.95);
+}
+
+.skyview-image-container img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.skyview-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--gold);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.skyview-loader {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 215, 0, 0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.skyview-telemetry {
+  background: rgba(12, 6, 6, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0.9rem 1.15rem;
+}
+
+.skyview-telem-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.4rem;
+}
+
+.skyview-telem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem;
+  font-size: 0.86rem;
+}
+.skyview-telem-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.telem-k { color: var(--text-dim); font-size: 0.78rem; text-transform: uppercase; font-weight: 600; }
+.telem-v { color: #ffffff; font-weight: 600; }
+
+.skyview-key-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(46, 168, 114, 0.15);
+  border: 1px solid var(--jade);
+  color: #55e69e;
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+.skyview-key-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #55e69e;
+  box-shadow: 0 0 8px #55e69e;
+}
+
+.skyview-gallery-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.4rem 0;
+  margin-top: 0.6rem;
+}
+.skyview-gallery-thumb {
+  width: 68px;
+  height: 52px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+  background: #0d0d14;
+  padding: 0;
+  overflow: hidden;
+}
+.skyview-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.skyview-gallery-thumb:hover, .skyview-gallery-thumb.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--gold);
+  transform: scale(1.05);
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+footer {
+  text-align: center;
+  padding: 1.5rem 1rem 3rem;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  position: relative;
+  z-index: 25;
+  border-top: 1px solid rgba(139, 0, 0, 0.3);
+  margin-top: 2rem;
+}
+footer a { color: var(--gold); text-decoration: none; font-weight: 600; }
+footer a:hover { text-decoration: underline; color: #ffffff; }
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #petals, #bg-stars { display: none; }
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Ink-wash gradient layer -->
+<div class="bg-layer bg-ink"></div>
+
+<!-- SVG scene layer: Torii Gate + Mountains + Cherry Blossoms (from index.html) -->
+<div class="bg-layer bg-scene">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice"
+       width="100%" height="100%" style="position:absolute;bottom:0;">
+    <!-- Distant mountains -->
+    <path d="M0 700 Q200 450 400 580 Q550 420 720 520 Q900 380 1100 500 Q1250 420 1440 550 L1440 900 L0 900Z"
+          fill="rgba(40,20,20,0.5)" />
+    <path d="M0 750 Q300 550 600 650 Q800 520 1000 620 Q1200 530 1440 630 L1440 900 L0 900Z"
+          fill="rgba(30,15,15,0.6)" />
+
+    <!-- Torii gate -->
+    <g transform="translate(720,520)" fill="none" stroke="#8b0000" stroke-width="4" opacity="0.7">
+      <line x1="-80" y1="0" x2="-80" y2="200" />
+      <line x1="80"  y1="0" x2="80"  y2="200" />
+      <path d="M-110,-10 Q0,-30 110,-10" stroke-width="6" />
+      <line x1="-95" y1="20" x2="95" y2="20" stroke-width="4" />
+      <line x1="-80" y1="0"  x2="-80" y2="-15" />
+      <line x1="80"  y1="0"  x2="80"  y2="-15" />
+    </g>
+
+    <!-- Cherry blossom branches -->
+    <g opacity="0.3">
+      <path d="M0 300 Q60 280 120 310 Q160 290 200 320" stroke="#5a2a2a" stroke-width="2" fill="none"/>
+      <circle cx="130" cy="300" r="4" fill="#ffb7c5" opacity="0.6"/>
+      <circle cx="160" cy="295" r="3" fill="#ffb7c5" opacity="0.5"/>
+      <circle cx="180" cy="310" r="5" fill="#ffb7c5" opacity="0.4"/>
+      <circle cx="110" cy="308" r="3" fill="#ffb7c5" opacity="0.7"/>
+      <circle cx="200" cy="318" r="4" fill="#ffb7c5" opacity="0.3"/>
+    </g>
+    <g opacity="0.25">
+      <path d="M1440 250 Q1380 240 1320 270 Q1280 250 1240 280" stroke="#5a2a2a" stroke-width="2" fill="none"/>
+      <circle cx="1340" cy="260" r="4" fill="#ffb7c5" opacity="0.6"/>
+      <circle cx="1300" cy="258" r="3" fill="#ffb7c5" opacity="0.5"/>
+      <circle cx="1270" cy="272" r="5" fill="#ffb7c5" opacity="0.4"/>
+      <circle cx="1360" cy="268" r="3" fill="#ffb7c5" opacity="0.7"/>
+    </g>
+
+    <!-- Celestial Moon -->
+    <circle cx="1150" cy="120" r="55" fill="rgba(255,215,0,0.06)" />
+    <circle cx="1150" cy="120" r="50" fill="none" stroke="rgba(255,215,0,0.1)" stroke-width="1" />
+  </svg>
+</div>
+
+<!-- Ambient Stars & Falling Petals Canvases -->
+<canvas id="bg-stars" aria-hidden="true"></canvas>
+<canvas id="petals" aria-hidden="true"></canvas>
+
+<!-- Side Kanji Decorative Elements (from index.html) -->
+<div class="side-kanji left">月読の見張り</div>
+<div class="side-kanji right">天体観測所</div>
+
+<!-- Japanese Kamon Icons (Defs for map markers & UI) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- Torii Gate (Shrine) -->
+    <g id="kamon-shrine">
+      <path d="M4 11 Q16 5 28 11" stroke="#e62b3c" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M6 14 h20" stroke="#f0c850" stroke-width="1.8" stroke-linecap="round"/>
+      <rect x="9" y="14" width="2.8" height="14" rx="0.5" fill="#e62b3c"/>
+      <rect x="20.2" y="14" width="2.8" height="14" rx="0.5" fill="#e62b3c"/>
+      <line x1="16" y1="8" x2="16" y2="14" stroke="#e62b3c" stroke-width="2.2"/>
+    </g>
+    <!-- Sacred Mountain Peak (Mt. Fuji) -->
+    <g id="kamon-peak">
+      <path d="M16 4 L4 28 h24 L16 4 Z" fill="none" stroke="#2fa872" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M16 4 L20.5 13 L16 16 L11.5 13 Z" fill="#ffffff" opacity="0.85"/>
+      <circle cx="16" cy="7.5" r="2.5" fill="#e62b3c"/>
+    </g>
+    <!-- Temple Pagoda (Goju-no-to) -->
+    <g id="kamon-temple">
+      <path d="M16 3 L15 6 h2 L16 3 Z" fill="#f0c850"/>
+      <path d="M7 11 L16 7 L25 11" stroke="#b8922c" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M9 17 L16 14 L23 17" stroke="#b8922c" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M11 23 L16 21 L21 23" stroke="#b8922c" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <rect x="13.5" y="11" width="5" height="16" fill="none" stroke="#f0c850" stroke-width="1.5"/>
+      <line x1="6" y1="27" x2="26" y2="27" stroke="#f0c850" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <!-- Celestial Observatory -->
+    <g id="kamon-observatory">
+      <circle cx="16" cy="12" r="7.5" fill="none" stroke="#4a90e2" stroke-width="2"/>
+      <ellipse cx="16" cy="12" rx="7.5" ry="3" fill="none" stroke="#f0c850" stroke-width="1.2"/>
+      <path d="M16 4.5 v15" stroke="#4a90e2" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M11 21 L7 28 M21 21 L25 28" stroke="#4a90e2" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="16" cy="12" r="2.5" fill="#f0c850"/>
+    </g>
+    <!-- Celestial Eye & Cloud Viewpoint -->
+    <g id="kamon-viewpoint">
+      <path d="M3 16 Q16 6 29 16 Q16 26 3 16 Z" fill="none" stroke="#e6a0a8" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="16" cy="16" r="4.5" fill="none" stroke="#f0c850" stroke-width="1.5"/>
+      <circle cx="16" cy="16" r="2" fill="#e62b3c"/>
+    </g>
+    <!-- Sacred Forest / Nature Reserve -->
+    <g id="kamon-park">
+      <path d="M16 4 L22 12 h-3.5 L24 20 h-4.5 L24 26 H8 L12.5 20 H8 L13.5 12 H10 Z" fill="none" stroke="#38b000" stroke-width="2" stroke-linejoin="round"/>
+      <rect x="14.5" y="24" width="3" height="4" fill="#8d5b4c"/>
+    </g>
+    <!-- Seigaiha Waves / Water -->
+    <g id="kamon-water">
+      <path d="M3 15 Q8 10 13 15 Q18 20 23 15 Q26 12 29 15" stroke="#4cc9f0" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M3 21 Q8 16 13 21 Q18 26 23 21 Q26 18 29 21" stroke="#4cc9f0" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- Ancient Fortress / Ruins -->
+    <g id="kamon-ruins">
+      <path d="M6 26 V13 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v13 Z" fill="none" stroke="#b0b0b0" stroke-width="2"/>
+      <line x1="4" y1="26" x2="28" y2="26" stroke="#b0b0b0" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </defs>
+</svg>
+
+<!-- Top-Left Tsukuyomi Dropdown Navigation Menu -->
+<div class="tsukuyomi-nav-dropdown" id="navDropdown">
+  <button type="button" class="nav-dropdown-trigger" id="navDropdownTrigger" aria-haspopup="true" aria-expanded="false" title="Tsukuyomi Navigation Realms">
+    <span class="corner tl"></span>
+    <span class="corner tr"></span>
+    <span class="corner bl"></span>
+    <span class="corner br"></span>
+    <span class="nav-trigger-icon">⛩️</span>
+    <span class="nav-trigger-text">TSUKUYOMI</span>
+    <span class="nav-trigger-arrow">▾</span>
+  </button>
+  <div class="nav-dropdown-menu" id="navDropdownMenu" role="menu">
+    <div class="nav-dropdown-header">✦ 導 き · SANCTUARY REALMS ✦</div>
+    <a href="index.html" class="nav-menu-item" role="menuitem">
+      <span class="nav-menu-icon">🏯</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">Sanctuary Gate</div>
+        <div class="nav-menu-desc">Return to the grand entrance</div>
+      </div>
+      <span class="nav-menu-arrow">›</span>
+    </a>
+    <a href="watchtower.html" class="nav-menu-item active" role="menuitem">
+      <span class="nav-menu-icon">⛩️</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">The Watchtower</div>
+        <div class="nav-menu-desc">Celestial clarity & night sky sanctuaries</div>
+      </div>
+      <span class="nav-menu-badge">Current</span>
+    </a>
+    <a href="celestial-scroll.html" class="nav-menu-item" role="menuitem">
+      <span class="nav-menu-icon">📜</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">The Celestial Scroll</div>
+        <div class="nav-menu-desc">Ancient lunar calendar & space launches</div>
+      </div>
+      <span class="nav-menu-arrow">›</span>
+    </a>
+    <a href="spirit-lens.html" class="nav-menu-item" role="menuitem">
+      <span class="nav-menu-icon">🔮</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">The Spirit Lens</div>
+        <div class="nav-menu-desc">Deep-space image purification & vision</div>
+      </div>
+      <span class="nav-menu-arrow">›</span>
+    </a>
+  </div>
+</div>
+
+<header>
+  <div class="top-nav-row">
+    <div class="eyebrow-pill">✦ 月見 · TSUKUYOMI WATCH · 第壱見張り台 ✦</div>
+  </div>
+
+  <!-- Interactive Rive Celestial Crest -->
+  <div class="header-crest-wrap">
+    <div class="rive-crest-wrapper" id="rive-container" title="Interactive Rive Celestial Animation · Click to Pulse">
+      <canvas id="rive-canvas" width="120" height="120" class="rive-canvas"></canvas>
+      <div class="crest-torii-overlay">
+        <svg width="44" height="34" viewBox="0 0 120 90" aria-hidden="true">
+          <g fill="#ffd700">
+            <path d="M4 18 Q60 4 116 18 L112 28 Q60 16 8 28Z"/>
+            <rect x="18" y="30" width="84" height="8"/>
+            <rect x="26" y="28" width="9" height="60"/>
+            <rect x="85" y="28" width="9" height="60"/>
+            <rect x="56" y="18" width="8" height="12"/>
+          </g>
+          <path d="M4 18 Q60 4 116 18" stroke="#8b0000" stroke-width="2.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="rive-glow-ring"></div>
+    </div>
+  </div>
+
+  <h1 class="app-title">THE WATCHTOWER</h1>
+  <p class="subtitle-kanji">月 読 の 見 張 り 台</p>
+  <p class="page-description">Ascend the sacred watchtower to survey real-time atmospheric clarity across the realm, navigate the living celestial sphere, and uncover pristine sanctuaries for night sky observation.</p>
+
+  <!-- Katana Divider from index.html -->
+  <div class="katana-divider">
+    <svg viewBox="0 0 320 24" xmlns="http://www.w3.org/2000/svg">
+      <line x1="20" y1="12" x2="300" y2="12" stroke="url(#katanaBladeWatch)" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse cx="240" cy="12" rx="8" ry="6" fill="none" stroke="#8b0000" stroke-width="1.4"/>
+      <line x1="252" y1="12" x2="300" y2="12" stroke="#3a1a1a" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="258" y1="10" x2="258" y2="14" stroke="#8b0000" stroke-width="1"/>
+      <line x1="266" y1="10" x2="266" y2="14" stroke="#8b0000" stroke-width="1"/>
+      <line x1="274" y1="10" x2="274" y2="14" stroke="#8b0000" stroke-width="1"/>
+      <line x1="282" y1="10" x2="282" y2="14" stroke="#8b0000" stroke-width="1"/>
+      <line x1="290" y1="10" x2="290" y2="14" stroke="#8b0000" stroke-width="1"/>
+      <circle cx="298" cy="12" r="3.2" fill="#8b0000" opacity="0.8"/>
+      <defs>
+        <linearGradient id="katanaBladeWatch" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="transparent"/>
+          <stop offset="20%" stop-color="rgba(192,192,192,0.6)"/>
+          <stop offset="80%" stop-color="rgba(255,215,0,0.5)"/>
+          <stop offset="100%" stop-color="rgba(184,134,11,0.7)"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+</header>
+
+<!-- Modern Location Search Bar -->
+<div class="search-container">
+  <form id="search" class="search-box">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input id="q" placeholder="Enter a shrine, mountain, or city (e.g. Kyoto, Fuji, Manali, Joshua Tree)" aria-label="Place name" autocomplete="off" required>
+    <button type="submit" class="btn-search">
+      <span>Search</span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+    <button type="button" id="geo" class="btn-geo" title="Locate via GPS">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+      </svg>
+      <span>Near Me</span>
+    </button>
+  </form>
+
+  <!-- Popular Celestial Presets -->
+  <div class="preset-chips">
+    <span style="font-size: 0.8rem; color: var(--text-dim); margin-right: 0.2rem; font-weight: 600;">Quick Portals:</span>
+    <button type="button" class="preset-chip" data-search="Mount Fuji, Japan">🗻 Mt. Fuji</button>
+    <button type="button" class="preset-chip" data-search="Kyoto, Japan">⛩ Kyoto</button>
+    <button type="button" class="preset-chip" data-search="Lake Biwa, Japan">🌊 Lake Biwa</button>
+    <button type="button" class="preset-chip" data-search="Mauna Kea, Hawaii">🔭 Mauna Kea</button>
+    <button type="button" class="preset-chip" data-search="Atacama Desert, Chile">✨ Atacama</button>
+    <button type="button" class="preset-chip" data-search="Manali, Himachal Pradesh">🏔 Manali</button>
+  </div>
+</div>
+
+<div id="status" role="status"></div>
+
+<!-- Active Spot Banner (Shows when user clicks a specific spot to inspect) -->
+<div id="active-banner" class="active-banner">
+  <div class="active-banner-inner">
+    <div class="active-spot-text">
+      <span class="active-spot-badge">INSPECTING SPOT</span>
+      <strong id="active-spot-name" style="color:#ffffff; font-size:1.05rem;">—</strong>
+      <span id="active-spot-meta" style="color:var(--text-muted); font-size:0.9rem;"></span>
+    </div>
+    <button type="button" id="btn-reset-view" class="btn-reset-view">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+      <span>Return to Base Search</span>
+    </button>
+  </div>
+</div>
+
+<main>
+  <!-- Left Column: Hanging Scroll Map + Moon & Celestial Twilight (Perfect Height Balance) -->
+  <div class="col-left">
+    <!-- Ancient Hanging Scroll Map -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          Ancient Scroll Map · 絵巻物
+        </h2>
+      </div>
+
+      <div class="scroll-wrapper">
+        <div class="scroll-roller scroll-roller-top"></div>
+        <div class="scroll-canvas">
+          <div id="map"></div>
+        </div>
+        <div class="scroll-roller scroll-roller-bottom"></div>
+      </div>
+
+      <p style="font-size:0.86rem; color:var(--text-muted); margin: 0.5rem 0 0; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+        <span>💡 Hover any crest to preview. Click to select & sync telemetry.</span>
+        <span>Toggle layers: Ink Scroll, Dark Void, Satellite, NASA Night Lights.</span>
+      </p>
+    </section>
+
+    <!-- Moon & Planetary Twilight Panel (Placed directly under scroll map to remove the gap!) -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 2a7 7 0 0 0 0 20 7 7 0 0 1 0-20Z"></path>
+          </svg>
+          Moon Phase & Celestial Twilight · 月齢
+        </h2>
+      </div>
+      <div id="moon">
+        <svg id="moonsvg" viewBox="-50 -50 100 100" aria-hidden="true"></svg>
+        <dl id="moondl"></dl>
+      </div>
+    </section>
+  </div>
+
+  <!-- Right Column: Night Honor Score & High-Information Spots List -->
+  <div class="col-right">
+    <!-- Night Honor Score Panel -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          Night Honor Score · 夜誉
+        </h2>
+      </div>
+
+      <div class="score-wrap">
+        <div class="ring-wrapper">
+          <svg class="ring" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#222232" stroke-width="9"/>
+            <circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="#f0c850" stroke-width="9" stroke-linecap="round" stroke-dasharray="0 327"/>
+          </svg>
+          <div class="score-number">
+            <span id="num">–</span>
+            <span class="score-sublabel">Honor</span>
+          </div>
+        </div>
+
+        <div class="score-meta">
+          <div id="current-focus-badge" class="location-title-badge">Awaiting location</div>
+          <p class="verdict" id="verdict">Seek and stars will answer</p>
+          <dl id="wx"></dl>
+        </div>
+      </div>
+
+      <!-- Light Pollution Meter (Bortle Scale) -->
+      <div class="lp-meter" id="lp-section">
+        <div class="lp-meter-label">
+          <span>Dark Sky (Bortle 1)</span>
+          <span>Bortle Scale</span>
+          <span>City Glow (Bortle 9)</span>
+        </div>
+        <div class="lp-meter-bar">
+          <div class="lp-meter-needle" id="lp-needle" style="left: 50%;"></div>
+        </div>
+        <p class="bortle-label" id="bortle-label">Awaiting light pollution data</p>
+      </div>
+    </section>
+
+    <!-- Top Stargazing Spots List with Sorting & Full Visible Information -->
+    <section class="panel">
+      <div class="spots-header">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+          Top Nearby Spots · 名所
+        </h2>
+        <select id="sort-select" class="sort-select" aria-label="Sort spots by">
+          <option value="score">Sort: Best Honor Score</option>
+          <option value="distance">Sort: Nearest Distance</option>
+        </select>
+      </div>
+      <ol id="spots">
+        <!-- Generous, high-visibility initial placeholder -->
+        <li class="spots-empty-placeholder">
+          <div class="spots-empty-icon">⛩️ 🗻 🔭</div>
+          <strong style="display:block; font-size:1.05rem; color:#ffffff;">Awaiting Stargazing Portals</strong>
+          <p>Search any location or choose a Quick Portal above to summon shrines, mountain peaks, and dark lookouts with real-time celestial visibility scores.</p>
+        </li>
+      </ol>
+    </section>
+  </div>
+
+  <!-- Full-Width Celestial Map (Tenmon-zu) -->
+  <section class="panel star-map-panel">
+    <div class="star-map-toolbar">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+          <path d="M2 12h20"></path>
+        </svg>
+        Interactive Celestial Sphere · 天文図
+      </h2>
+      <div class="star-map-controls">
+        <button type="button" id="btn-toggle-const" class="sky-btn active">Constellations</button>
+        <button type="button" id="btn-toggle-labels" class="sky-btn active">Star Names</button>
+        <button type="button" id="btn-toggle-dso" class="sky-btn active">Deep Sky (M42/M31)</button>
+        <button type="button" id="btn-toggle-grid" class="sky-btn">Ecliptic & Grid</button>
+        <button type="button" id="skynow" class="sky-btn">Reset to Now</button>
+        <button type="button" id="btn-skyview-modal" class="sky-btn" style="border-color:var(--gold); color:var(--gold); background:rgba(240,200,80,0.12); font-weight:700;" title="Open NASA SkyView Live Virtual Telescope">
+          🔭 NASA SkyView API
+        </button>
+      </div>
+    </div>
+
+    <!-- HTML5 Canvas Stellar Projection -->
+    <div class="star-canvas-container" id="star-canvas-container">
+      <canvas id="sky-canvas"></canvas>
+      <div class="sky-zoom-controls">
+        <button type="button" id="sky-zoom-in" class="sky-zoom-btn" title="Zoom in">+</button>
+        <button type="button" id="sky-zoom-out" class="sky-zoom-btn" title="Zoom out">−</button>
+      </div>
+      <div class="sky-overlay-info" id="sky-coords-tag">
+        Lat: --° | LST: --:-- | Drag to rotate sphere · Wheel to zoom
+      </div>
+    </div>
+
+    <div class="sky-legend">
+      <span><span class="sky-legend-dot" style="background:#80d4ff; box-shadow:0 0 6px #80d4ff;"></span> O/B Stars (Sirius, Vega)</span>
+      <span><span class="sky-legend-dot" style="background:#fff4b8; box-shadow:0 0 6px #fff4b8;"></span> G/F Stars (Capella, Polaris)</span>
+      <span><span class="sky-legend-dot" style="background:#ff7b60; box-shadow:0 0 6px #ff7b60;"></span> M Red Giants (Betelgeuse, Antares)</span>
+      <span><span class="sky-legend-dot" style="background:#f0c850; box-shadow:0 0 6px #f0c850;"></span> Planets (Mars, Jupiter, Venus, Saturn)</span>
+      <span><span class="sky-legend-dot" style="background:#ff66cc; box-shadow:0 0 6px #ff66cc;"></span> Deep-Sky Objects (Messier DSOs)</span>
+      <span><span class="sky-legend-dot" style="background:rgba(255,255,255,0.4);"></span> Constellation Lines</span>
+    </div>
+  </section>
+</main>
+
+<!-- NASA Live Space Telescope Observatory Modal -->
+<div id="skyview-modal" class="skyview-modal" aria-hidden="true" style="display:none;">
+  <div class="skyview-modal-backdrop" id="skyview-backdrop"></div>
+  <div class="skyview-modal-content">
+    <div class="skyview-modal-header">
+      <div style="display:flex; align-items:center; gap:0.65rem;">
+        <span style="font-size:1.8rem;">🔭</span>
+        <div>
+          <h3 style="margin:0; font-size:1.35rem; color:var(--gold); font-family:var(--font-heading);">
+            NASA Space Telescope Observatory · 宇宙望遠鏡
+          </h3>
+          <p style="margin:0; font-size:0.86rem; color:var(--text-muted);">
+            Live Hubble, James Webb, Spitzer & Chandra Telescope Data via NASA Astrophysics API
+          </p>
+        </div>
+      </div>
+      <button type="button" id="btn-close-skyview" class="skyview-close-btn" aria-label="Close modal">✕</button>
+    </div>
+
+    <!-- NASA Live Data Status Badge -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.9rem;">
+      <div class="skyview-key-badge">
+        <span class="skyview-key-dot"></span>
+        <span>NASA Deep-Space Astrophysics API Active (Hubble · JWST · Spitzer · Chandra)</span>
+      </div>
+      <span style="font-size:0.8rem; color:var(--text-dim);">Live Endpoint: images-api.nasa.gov</span>
+    </div>
+
+    <!-- Deep Space Search Bar & Presets -->
+    <div id="skyview-deep-space-controls">
+      <div class="skyview-presets-row">
+        <span style="font-size:0.82rem; font-weight:700; color:var(--text-dim); margin-right:0.3rem;">PRESETS:</span>
+        <button type="button" class="skyview-preset-btn active" data-target="Orion Nebula">🌌 Orion Nebula (M42)</button>
+        <button type="button" class="skyview-preset-btn" data-target="Andromeda Galaxy">🌀 Andromeda (M31)</button>
+        <button type="button" class="skyview-preset-btn" data-target="Pleiades">❄ Pleiades (M45)</button>
+        <button type="button" class="skyview-preset-btn" data-target="Crab Nebula">💥 Crab Nebula (M1)</button>
+        <button type="button" class="skyview-preset-btn" data-target="Pillars of Creation">🏛 Pillars of Creation</button>
+        <button type="button" class="skyview-preset-btn" data-target="Whirlpool Galaxy">💫 Whirlpool (M51)</button>
+        <button type="button" class="skyview-preset-btn" data-target="James Webb Cosmic Cliffs">✨ JWST Carina</button>
+        <button type="button" class="skyview-preset-btn" data-target="Sagittarius A*">🌟 Galactic Center</button>
+      </div>
+
+      <form id="skyview-form" class="skyview-query-form">
+        <div class="skyview-form-group">
+          <label for="skyview-target-input">Search Target (Nebula, Galaxy, Star, Planet):</label>
+          <input id="skyview-target-input" type="text" value="Orion Nebula" placeholder="e.g. Orion Nebula, M31, Jupiter, Pillars of Creation..." required>
+        </div>
+        <div class="skyview-form-group" style="max-width:240px;">
+          <label for="skyview-mission-select">Observatory Filter:</label>
+          <select id="skyview-mission-select">
+            <option value="">All Space Telescopes</option>
+            <option value="Hubble">Hubble Space Telescope (HST)</option>
+            <option value="James Webb">James Webb Space Telescope (JWST)</option>
+            <option value="Spitzer">Spitzer Infrared Telescope</option>
+            <option value="Chandra">Chandra X-Ray Observatory</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-search" style="padding:0.48rem 1.25rem; border-radius:8px; align-self:flex-end;">
+          Query Telescope
+        </button>
+      </form>
+    </div>
+
+    <!-- Live Telescope Display Area -->
+    <div class="skyview-viewer-area">
+      <div class="skyview-image-container">
+        <div id="skyview-spinner" class="skyview-spinner" style="display:none;">
+          <div class="skyview-loader"></div>
+          <span id="skyview-spinnerText">Querying NASA Astrophysics archives...</span>
+        </div>
+        <img id="skyview-img" src="" alt="NASA Space Telescope Imagery" style="display:none;">
+        <div id="skyview-fallback" class="skyview-fallback">
+          <p style="color:var(--text-muted); font-size:0.95rem; text-align:center; padding:1.5rem;">
+            Ready to summon high-resolution deep space telescope observations from NASA.
+          </p>
+        </div>
+      </div>
+
+      <!-- Multi-Exposure Observation Gallery Strip -->
+      <div id="skyview-gallery-box" style="display:none;">
+        <span style="font-size:0.78rem; font-weight:700; color:var(--text-dim); text-transform:uppercase;">AVAILABLE OBSERVATION EXPOSURES:</span>
+        <div id="skyview-gallery" class="skyview-gallery-strip"></div>
+      </div>
+
+      <!-- Telemetry Info Card -->
+      <div class="skyview-telemetry">
+        <div class="skyview-telem-header">
+          <strong id="skyview-telem-title" style="font-size:1.15rem; color:var(--gold);">M42 — Orion Nebula</strong>
+          <span id="skyview-telem-desc" style="font-size:0.88rem; color:var(--text-muted);">NASA Deep Space Telescope Observation</span>
+        </div>
+        <div class="skyview-telem-grid">
+          <div class="skyview-telem-cell"><span class="telem-k">Observatory / Mission:</span> <span id="skyview-telem-survey" class="telem-v">Hubble / JWST</span></div>
+          <div class="skyview-telem-cell"><span class="telem-k">NASA Center / ID:</span> <span id="skyview-telem-id" class="telem-v">GSFC / JPL</span></div>
+          <div class="skyview-telem-cell"><span class="telem-k">Date Created:</span> <span id="skyview-telem-date" class="telem-v">Live</span></div>
+          <div class="skyview-telem-cell"><span class="telem-k">Authentication:</span> <span class="telem-v" style="color:#55e69e;">NASA Astrophysics Verified</span></div>
+        </div>
+        <p id="skyview-full-desc" style="font-size:0.86rem; color:var(--text-muted); line-height:1.5; margin:0.7rem 0 0; max-height:90px; overflow-y:auto;"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>見張り台 (The Watchtower) · Crafted with precision for stargazers, astrophotographers, and wanderers.</p>
+  <p>Weather data via <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · Points of interest from <a href="https://www.openstreetmap.org/" target="_blank" rel="noopener">OpenStreetMap</a> · Night lights imagery courtesy of NASA GIBS.</p>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="https://unpkg.com/@rive-app/canvas@2.9.1"></script>
+<script>
+/* ───────────────────────────────────────────────────
+   The Watchtower · 見張り台 (watchtower.js)
+   Stargazing & Celestial Clarity Dashboard
+   Features:
+   - Full spot selection & active dashboard synchronization
+   - High-contrast typography & Japanese Kamon crest map pins
+   - Authentic hanging scroll map framing (Kakejiku)
+   - Interactive 60fps HTML5 Canvas Celestial Sphere (Tenmon-zu)
+   - Real-time weather, Night Honor Score & Bortle LP index
+   - Nearby viewpoints with Overpass API + rich fallback
+   ─────────────────────────────────────────────────── */
+
+(function () {
+  "use strict";
+
+  /* ── DOM References ── */
+  const $q = document.getElementById("q");
+  const $form = document.getElementById("search");
+  const $geo = document.getElementById("geo");
+  const $status = document.getElementById("status");
+  const $arc = document.getElementById("arc");
+  const $num = document.getElementById("num");
+  const $verdict = document.getElementById("verdict");
+  const $wx = document.getElementById("wx");
+  const $moondl = document.getElementById("moondl");
+  const $moonsvg = document.getElementById("moonsvg");
+  const $spots = document.getElementById("spots");
+  const $sortSel = document.getElementById("sort-select");
+  const $lpNeedle = document.getElementById("lp-needle");
+  const $bortleLabel = document.getElementById("bortle-label");
+  const $focusBadge = document.getElementById("current-focus-badge");
+  const $activeBanner = document.getElementById("active-banner");
+  const $activeSpotName = document.getElementById("active-spot-name");
+  const $activeSpotMeta = document.getElementById("active-spot-meta");
+  const $btnResetView = document.getElementById("btn-reset-view");
+
+  const CIRC = 2 * Math.PI * 52; // Score circle circumference (326.72px)
+
+  /* ── Global State ── */
+  let map, mainMarker, lightLayer, satLayer, inkLayer;
+  let baseLocation = null;       // Base searched location object
+  let activeSpot = null;         // Currently inspected spot (or null if viewing base)
+  let spotMarkers = [];          // Array of Leaflet markers
+  let currentSpots = [];         // Array of spot data objects
+  let currentWeather = null;     // Cached base weather data
+  let currentMoonIllum = 0;      // Moon illumination fraction
+  let skyEngine = null;          // Celestial canvas engine instance
+
+  /* ── Japanese Kamon Crest Icons for Leaflet Markers ── */
+  const KAMON_ICONS = {
+    shrine: {
+      type: "Shrine / Torii",
+      color: "#e62b3c",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-shrine"/></svg>`
+    },
+    peak: {
+      type: "Mountain Peak",
+      color: "#2fa872",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-peak"/></svg>`
+    },
+    temple: {
+      type: "Temple / Pagoda",
+      color: "#f0c850",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-temple"/></svg>`
+    },
+    observatory: {
+      type: "Observatory",
+      color: "#4a90e2",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-observatory"/></svg>`
+    },
+    viewpoint: {
+      type: "Viewpoint",
+      color: "#e6a0a8",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-viewpoint"/></svg>`
+    },
+    park: {
+      type: "Nature Sanctuary",
+      color: "#38b000",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-park"/></svg>`
+    },
+    water: {
+      type: "Sacred Lake / Coast",
+      color: "#4cc9f0",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-water"/></svg>`
+    },
+    ruins: {
+      type: "Ancient Citadel",
+      color: "#b0b0b0",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-ruins"/></svg>`
+    },
+    default: {
+      type: "Stargazing Point",
+      color: "#f0c850",
+      svg: `<svg viewBox="0 0 32 32"><use href="#kamon-viewpoint"/></svg>`
+    }
+  };
+
+  function getSpotCategory(type) {
+    if (!type) return "default";
+    const t = String(type).toLowerCase();
+    if (t.includes("shrine") || t.includes("worship") || t.includes("torii")) return "shrine";
+    if (t.includes("peak") || t.includes("mountain") || t.includes("volcano") || t.includes("hill")) return "peak";
+    if (t.includes("temple") || t.includes("pagoda") || t.includes("buddhist")) return "temple";
+    if (t.includes("observatory") || t.includes("telescope")) return "observatory";
+    if (t.includes("viewpoint") || t.includes("panorama") || t.includes("lookout")) return "viewpoint";
+    if (t.includes("park") || t.includes("reserve") || t.includes("forest") || t.includes("wood")) return "park";
+    if (t.includes("water") || t.includes("lake") || t.includes("bay") || t.includes("coast")) return "water";
+    if (t.includes("ruin") || t.includes("castle") || t.includes("historic") || t.includes("fort")) return "ruins";
+    return "default";
+  }
+
+  function getSpotLabel(category) {
+    const labels = {
+      shrine: "⛩ Shrine",
+      peak: "🗻 Peak",
+      temple: "🏯 Temple",
+      observatory: "🔭 Observatory",
+      viewpoint: "👁 Viewpoint",
+      park: "🌲 Park / Reserve",
+      water: "🌊 Waterfront",
+      ruins: "🏛 Historic Site",
+      default: "✨ Stargazing Spot",
+      place_of_worship: "⛩ Place of Worship"
+    };
+    return labels[category] || "📍 Stargazing Site";
+  }
+
+  /* ── Bortle Scale Reference ── */
+  const BORTLE_SCALE = [
+    { class: 1, label: "Pristine dark-sky sanctuary", color: "#061225", minScore: 92 },
+    { class: 2, label: "Truly dark rural sky", color: "#0d223f", minScore: 82 },
+    { class: 3, label: "Rural night sky", color: "#14373a", minScore: 72 },
+    { class: 4, label: "Rural / suburban transition", color: "#22562c", minScore: 60 },
+    { class: 5, label: "Suburban night sky", color: "#546e1c", minScore: 48 },
+    { class: 6, label: "Bright suburban sky", color: "#8a7e18", minScore: 36 },
+    { class: 7, label: "Suburban / urban transition", color: "#b55e14", minScore: 24 },
+    { class: 8, label: "City night sky", color: "#d83818", minScore: 12 },
+    { class: 9, label: "Inner-city luminous sky", color: "#ff1828", minScore: 0 }
+  ];
+
+  function getBortleInfo(lpScore) {
+    for (const b of BORTLE_SCALE) {
+      if (lpScore >= b.minScore) return b;
+    }
+    return BORTLE_SCALE[BORTLE_SCALE.length - 1];
+  }
+
+  function getLpDotColor(lpScore) {
+    if (lpScore >= 80) return "#2fa872";
+    if (lpScore >= 60) return "#7cb342";
+    if (lpScore >= 40) return "#fbc02d";
+    if (lpScore >= 20) return "#f57c00";
+    return "#e62b3c";
+  }
+
+  /* ── Leaflet Map Initialization ── */
+  function initMap() {
+    map = L.map("map", {
+      zoomControl: true,
+      fadeAnimation: true,
+      zoomAnimation: true
+    }).setView([35.3606, 138.7274], 7); // Default to Mt. Fuji area
+
+    // Base Layer: OpenStreetMap styled with Antique Ink Scroll Filter
+    inkLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      className: "ink-tiles",
+      maxZoom: 19
+    }).addTo(map);
+
+    // Optional Dark Base Layer
+    const darkCarto = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: "&copy; CARTO",
+      maxZoom: 19
+    });
+
+    // Satellite Imagery Layer
+    satLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "&copy; Esri",
+      maxZoom: 18
+    });
+
+    // NASA VIIRS Night Lights (Light Pollution Overlay)
+    lightLayer = L.tileLayer("https://map1.vis.earthdata.nasa.gov/wmts-webmerc/VIIRS_CityLights_2012/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg", {
+      opacity: 0.65,
+      maxZoom: 8,
+      attribution: "NASA EarthData / GIBS"
+    });
+
+    // Layer Switcher
+    L.control.layers(
+      { "Scroll Ink (巻物)": inkLayer, "Dark Void (暗夜)": darkCarto, "Satellite (衛星)": satLayer },
+      { "NASA Night Lights (光害)": lightLayer },
+      { position: "topright" }
+    ).addTo(map);
+
+    // Main Location Torii Pin
+    const mainIcon = L.divIcon({
+      className: "",
+      html: `<div class="main-search-pin">
+        <svg viewBox="0 0 42 42" fill="none">
+          <circle cx="21" cy="21" r="19" fill="#12121c" stroke="#f0c850" stroke-width="2.5"/>
+          <path d="M8 17 Q21 10 34 17" stroke="#e62b3c" stroke-width="3" stroke-linecap="round"/>
+          <path d="M10 20 h22" stroke="#f0c850" stroke-width="2"/>
+          <rect x="13.5" y="20" width="3.5" height="15" rx="1" fill="#e62b3c"/>
+          <rect x="25" y="20" width="3.5" height="15" rx="1" fill="#e62b3c"/>
+          <line x1="21" y1="13" x2="21" y2="20" stroke="#e62b3c" stroke-width="2.5"/>
+        </svg>
+      </div>`,
+      iconSize: [42, 42],
+      iconAnchor: [21, 21],
+      popupAnchor: [0, -22]
+    });
+
+    mainMarker = L.marker([35.3606, 138.7274], { icon: mainIcon }).addTo(map);
+    mainMarker.setOpacity(0);
+
+    // Clicking the main search marker restores dashboard to base search location
+    mainMarker.on("click", () => {
+      if (baseLocation) selectSpot(null);
+    });
+
+    // Invalidate size on resize and post-load so all tiles render seamlessly
+    window.addEventListener("resize", () => {
+      if (map) map.invalidateSize();
+    });
+    setTimeout(() => { if (map) map.invalidateSize(); }, 150);
+    setTimeout(() => { if (map) map.invalidateSize(); }, 400);
+    setTimeout(() => { if (map) map.invalidateSize(); }, 700);
+  }
+
+  /* ── Kamon Marker Builder ── */
+  function createSpotMarker(spot, index) {
+    const cat = getSpotCategory(spot.type);
+    const kamon = KAMON_ICONS[cat] || KAMON_ICONS.default;
+    const scoreColor = spot.honorScore >= 75 ? "#f0c850" : spot.honorScore >= 50 ? "#e59e2b" : "#e62b3c";
+
+    const icon = L.divIcon({
+      className: "",
+      html: `<div class="kamon-pin" id="marker-pin-${index}">
+        <div class="kamon-badge" style="border-color:${kamon.color};">
+          ${kamon.svg}
+          <span class="kamon-score" style="background:${scoreColor};">${spot.honorScore}</span>
+        </div>
+      </div>`,
+      iconSize: [44, 44],
+      iconAnchor: [22, 22],
+      popupAnchor: [0, -24]
+    });
+
+    const marker = L.marker([spot.lat, spot.lng], { icon }).addTo(map);
+
+    // Tooltip on Hover
+    marker.bindTooltip(`<strong>${esc(spot.name)}</strong><br>Score: ${spot.honorScore} · ${spot.dist.toFixed(1)} km`, {
+      className: "spot-tooltip",
+      direction: "top",
+      offset: [0, -20]
+    });
+
+    // Rich Japanese-styled Dialog Box Popup
+    marker.bindPopup(buildSpotPopupHtml(spot, index), {
+      maxWidth: 290,
+      minWidth: 250,
+      className: "custom-leaflet-popup"
+    });
+
+    // When marker is clicked, sync and highlight that spot in the dashboard!
+    marker.on("click", () => {
+      selectSpot(spot, index);
+    });
+
+    return marker;
+  }
+
+  function buildSpotPopupHtml(spot, index) {
+    const cat = getSpotCategory(spot.type);
+    const label = getSpotLabel(cat);
+    const bortle = getBortleInfo(spot.lpScore);
+    const scoreColor = spot.honorScore >= 75 ? "#f0c850" : spot.honorScore >= 50 ? "#e59e2b" : "#e62b3c";
+
+    return `<div class="spot-popup">
+      <h3>${esc(spot.name)}</h3>
+      <div class="sp-score-banner">
+        <div class="sp-score-num" style="color:${scoreColor};">${spot.honorScore}</div>
+        <div class="sp-score-verdict">${spot.verdict}</div>
+      </div>
+      <div class="sp-row"><span class="sp-label">Category</span><span class="sp-val">${label}</span></div>
+      <div class="sp-row"><span class="sp-label">Distance</span><span class="sp-val">${spot.dist.toFixed(1)} km</span></div>
+      <div class="sp-row"><span class="sp-label">Cloud Cover</span><span class="sp-val">${spot.cloud}%</span></div>
+      <div class="sp-row"><span class="sp-label">Visibility</span><span class="sp-val">${spot.visibility}</span></div>
+      <div class="sp-row"><span class="sp-label">Light Pollution</span><span class="sp-val">Bortle ${bortle.class} (${spot.lpScore}%)</span></div>
+      <button type="button" class="sp-select-btn" onclick="window.__watchtowerSelectSpot(${index})">
+        Select & Sync Dashboard
+      </button>
+    </div>`;
+  }
+
+  // Global callback for the popup select button
+  window.__watchtowerSelectSpot = function (index) {
+    if (currentSpots[index]) {
+      selectSpot(currentSpots[index], index);
+      map.closePopup();
+    }
+  };
+
+  /* ── Spot Selection & Dashboard Synchronization ── */
+  function selectSpot(spot, index) {
+    activeSpot = spot;
+
+    // Remove active styles from all list items & marker pins
+    const listItems = $spots.querySelectorAll(".spot-item");
+    listItems.forEach(el => el.classList.remove("active-spot"));
+    document.querySelectorAll(".kamon-badge").forEach(b => b.classList.remove("selected"));
+
+    if (spot) {
+      // 1. Highlight specific spot
+      if (typeof index === "number" && listItems[index]) {
+        listItems[index].classList.add("active-spot");
+        listItems[index].scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      // Highlight map pin
+      const activePin = document.getElementById(`marker-pin-${index}`);
+      if (activePin) {
+        const badge = activePin.querySelector(".kamon-badge");
+        if (badge) badge.classList.add("selected");
+      }
+
+      // 2. Show Active Spot Top Banner
+      $activeBanner.classList.add("visible");
+      $activeSpotName.textContent = spot.name;
+      $activeSpotMeta.textContent = `· ${spot.dist.toFixed(1)} km · ${getSpotLabel(getSpotCategory(spot.type))}`;
+
+      // 3. Update Focus Badge on Score Panel
+      $focusBadge.innerHTML = `Viewing Spot: <strong>${esc(spot.name)}</strong>`;
+      $focusBadge.style.borderColor = "var(--gold)";
+
+      // 4. Update Night Honor Score Panel with this spot's data
+      renderHonorScore(spot.honorScore, spot.verdict, {
+        "Location": esc(spot.name),
+        "Cloud Cover": spot.cloud + "%",
+        "Humidity": spot.humidity + "%",
+        "Visibility": spot.visibility,
+        "Wind Speed": spot.wind + " km/h",
+        "Temperature": spot.temp ? spot.temp.toFixed(1) + " °C" : "—",
+        "Moon Illumination": (currentMoonIllum * 100).toFixed(0) + "%",
+        "Light Pollution": "Bortle " + getBortleInfo(spot.lpScore).class
+      });
+
+      // 5. Update Light Pollution Gauge
+      renderLightPollution(spot.lpScore);
+
+      // 6. Update Moon Times & Position for this spot's exact coordinates
+      renderMoon(spot.lat, spot.lng);
+
+      // 7. Synchronize Celestial Star Map to this spot
+      if (skyEngine) {
+        skyEngine.setCoordinates(spot.lat, spot.lng);
+      }
+    } else {
+      // Reset back to Base Search Location
+      $activeBanner.classList.remove("visible");
+
+      if (baseLocation) {
+        $focusBadge.textContent = baseLocation.name;
+        $focusBadge.style.borderColor = "var(--border-gold)";
+
+        renderHonorScore(baseLocation.honorScore, baseLocation.verdict, baseLocation.weatherDetails);
+        renderLightPollution(baseLocation.lpScore);
+        renderMoon(baseLocation.lat, baseLocation.lng);
+
+        if (skyEngine) {
+          skyEngine.setCoordinates(baseLocation.lat, baseLocation.lng);
+        }
+
+        // Fit map bounds to view all spots and base
+        const bounds = [[baseLocation.lat, baseLocation.lng]];
+        currentSpots.forEach(s => bounds.push([s.lat, s.lng]));
+        if (bounds.length > 1) {
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+        } else {
+          map.setView([baseLocation.lat, baseLocation.lng], 12);
+        }
+      }
+    }
+  }
+
+  /* ── Light Pollution Estimation (Bortle / City Density) ── */
+  function estimateLightPollution(lat, lng, distKm) {
+    // Model light pollution falloff with distance from assumed urban center
+    const distFactor = Math.min(100, (distKm || 0) * 2.8);
+    // Remote latitude dark-sky bonus
+    const latBonus = Math.abs(lat) > 55 ? 12 : Math.abs(lat) > 40 ? 6 : 0;
+    const score = Math.min(100, Math.max(8, distFactor + latBonus));
+    return Math.round(score);
+  }
+
+  function renderLightPollution(lpScore) {
+    const bortle = getBortleInfo(lpScore);
+    // Needle position: 0% = pure dark sky (left), 100% = bright city glow (right)
+    const pos = Math.max(2, Math.min(98, 100 - lpScore));
+    $lpNeedle.style.left = `${pos}%`;
+    $bortleLabel.textContent = `Bortle Class ${bortle.class} · ${bortle.label}`;
+    $bortleLabel.style.color = lpScore >= 60 ? "var(--gold)" : lpScore >= 35 ? "#f59e0b" : "var(--vermilion)";
+  }
+
+  /* ── Night Honor Score Computation ── */
+  function calcScore(wxValues, moonIllum, lpScore) {
+    const { cloud, humidity, visibility, wind } = wxValues;
+
+    // Sub-scores (0–100, higher is clearer for stargazing)
+    const cloudSub = Math.max(0, 100 - cloud);
+    const moonSub = Math.max(0, 100 - moonIllum * 100);
+    const visSub = Math.min(100, (visibility / 30000) * 100);
+    const lpSub = lpScore != null ? lpScore : 50;
+    const humSub = Math.max(0, 100 - humidity);
+    const windSub = Math.max(0, 100 - wind * 2.2);
+
+    // Weighted celestial visibility formula
+    const score = Math.round(
+      cloudSub * 0.30 +
+      moonSub * 0.20 +
+      visSub * 0.18 +
+      lpSub * 0.16 +
+      humSub * 0.08 +
+      windSub * 0.08
+    );
+
+    const verdict =
+      score >= 88 ? "✦ Exceptional — Gods grace the heavens tonight" :
+      score >= 72 ? "★ Pristine Clarity — Prime hours for telescopes" :
+      score >= 54 ? "◆ Favorable Sky — Bright stars & planets pierce through" :
+      score >= 32 ? "◇ Hazy / Moonlit — Glimpse only major constellations" :
+                    "✕ Obscured Sky — Thick veil of clouds & city light";
+
+    return {
+      score,
+      verdict,
+      details: {
+        "Cloud Cover": cloud + "%",
+        "Humidity": humidity + "%",
+        "Visibility": (visibility / 1000).toFixed(1) + " km",
+        "Wind Speed": wind + " km/h",
+        "Temperature": wxValues.temp != null ? wxValues.temp.toFixed(1) + " °C" : "—",
+        "Moon Illumination": (moonIllum * 100).toFixed(0) + "%",
+        "Light Pollution": "Bortle " + getBortleInfo(lpScore).class
+      }
+    };
+  }
+
+  function renderHonorScore(score, verdictText, details) {
+    // Animate circular arc meter
+    const pct = Math.max(0, Math.min(1, score / 100));
+    const offset = (1 - pct) * CIRC;
+    $arc.style.transition = "stroke-dashoffset 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), stroke 0.4s";
+    $arc.setAttribute("stroke-dasharray", CIRC.toFixed(1));
+    $arc.setAttribute("stroke-dashoffset", offset.toFixed(1));
+
+    const arcColor = score >= 75 ? "#f0c850" : score >= 50 ? "#e59e2b" : "#e62b3c";
+    $arc.setAttribute("stroke", arcColor);
+
+    $num.textContent = score;
+    $verdict.textContent = verdictText;
+
+    let html = "";
+    for (const [k, v] of Object.entries(details || {})) {
+      html += `<dt>${k}</dt><dd>${v}</dd>`;
+    }
+    $wx.innerHTML = html;
+  }
+
+  /* ── Moon Phase & Astronomical Times (SunCalc) ── */
+  function renderMoon(lat, lng) {
+    const now = new Date();
+    const moon = SunCalc.getMoonIllumination(now);
+    const moonTimes = SunCalc.getMoonTimes(now, lat, lng);
+    const sunTimes = SunCalc.getTimes(now, lat, lng);
+
+    const phase = moon.phase; // 0 = New, 0.5 = Full
+    const frac = moon.fraction;
+    currentMoonIllum = frac;
+
+    // Realistic Japanese Moon SVG Disk
+    const angle = phase < 0.5 ? (1 - phase * 4) : (phase * 4 - 3);
+    const side = phase < 0.5 ? 1 : -1;
+    let svg = `<circle cx="0" cy="0" r="42" fill="#f5eedf" stroke="#f0c850" stroke-width="1.5"/>`;
+    const rx = Math.abs(42 * Math.cos(phase * 2 * Math.PI));
+    svg += `<ellipse cx="${side * angle * 42}" cy="0" rx="${rx}" ry="42" fill="#0d0d14" opacity="0.9"/>`;
+    $moonsvg.innerHTML = svg;
+
+    const fmt = d => d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+    const phaseNames = [
+      "New Moon (新月)", "Waxing Crescent (三日月)", "First Quarter (上弦の月)",
+      "Waxing Gibbous (十三夜)", "Full Moon (満月 / 望月)", "Waning Gibbous (十六夜)",
+      "Last Quarter (下弦の月)", "Waning Crescent (有明の月)"
+    ];
+    const phaseName = phaseNames[Math.round(phase * 8) % 8];
+
+    let html = `
+      <dt>Lunar Phase</dt><dd>${phaseName}</dd>
+      <dt>Illumination</dt><dd>${(frac * 100).toFixed(0)}%</dd>
+      <dt>Moonrise</dt><dd>${fmt(moonTimes.rise)}</dd>
+      <dt>Moonset</dt><dd>${fmt(moonTimes.set)}</dd>
+      <dt>Dusk (Sunset)</dt><dd>${fmt(sunTimes.sunset)}</dd>
+      <dt>Dawn (Sunrise)</dt><dd>${fmt(sunTimes.sunrise)}</dd>
+    `;
+    $moondl.innerHTML = html;
+  }
+
+  /* ── Weather via Open-Meteo API ── */
+  async function fetchWeather(lat, lng) {
+    const url = "https://api.open-meteo.com/v1/forecast?" + new URLSearchParams({
+      latitude: lat,
+      longitude: lng,
+      current: "temperature_2m,relative_humidity_2m,weather_code,cloud_cover,wind_speed_10m",
+      hourly: "cloud_cover,visibility,relative_humidity_2m,temperature_2m,wind_speed_10m",
+      forecast_days: "1",
+      timezone: "auto"
+    });
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Weather service unreachable.");
+    return res.json();
+  }
+
+  function extractWeatherValues(weather) {
+    const cw = weather.current || weather.current_weather || {};
+    const h = weather.hourly || {};
+    const nowISO = cw.time || new Date().toISOString().slice(0, 13);
+    let idx = 0;
+    if (h.time) {
+      idx = h.time.findIndex(t => t.startsWith(nowISO.slice(0, 13)));
+      if (idx < 0) idx = 0;
+    }
+
+    return {
+      cloud: (h.cloud_cover || [])[idx] ?? cw.cloud_cover ?? 35,
+      humidity: (h.relative_humidity_2m || [])[idx] ?? cw.relative_humidity_2m ?? 45,
+      visibility: (h.visibility || [])[idx] ?? 18000,
+      wind: (h.wind_speed_10m || [])[idx] ?? cw.wind_speed_10m ?? 8,
+      temp: (h.temperature_2m || [])[idx] ?? cw.temperature_2m ?? 16
+    };
+  }
+
+  /* ── Geocoding & Reverse Geocoding (Nominatim) ── */
+  async function geocode(query) {
+    status(`Summoning celestial data for "${query}"...`);
+    const url = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams({
+      q: query,
+      format: "json",
+      limit: "1"
+    });
+    const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+    const data = await res.json();
+    if (!data.length) throw new Error("Location not recognized. Try another place name.");
+    return {
+      lat: +data[0].lat,
+      lng: +data[0].lon,
+      name: data[0].display_name
+    };
+  }
+
+  async function reverseGeocode(lat, lng) {
+    const url = "https://nominatim.openstreetmap.org/reverse?" + new URLSearchParams({
+      lat,
+      lon: lng,
+      format: "json"
+    });
+    const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+    const data = await res.json();
+    return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+
+  /* ── Overpass API & Fallback Spot Generation ── */
+  async function fetchNearbySpots(lat, lng) {
+    status("Detecting nearby shrines, summits, and dark lookouts...");
+    const radius = 35000; // 35 km search circle
+    const query = `[out:json][timeout:16];(
+      node["tourism"="viewpoint"](around:${radius},${lat},${lng});
+      node["man_made"="observatory"](around:${radius},${lat},${lng});
+      node["natural"="peak"](around:${radius},${lat},${lng});
+      node["amenity"="place_of_worship"](around:${radius},${lat},${lng});
+      node["leisure"="park"](around:${radius},${lat},${lng});
+      node["historic"="ruins"](around:${radius},${lat},${lng});
+      node["natural"="water"](around:${radius},${lat},${lng});
+    );out body 45;`;
+
+    try {
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: "data=" + encodeURIComponent(query)
+      });
+      if (!res.ok) throw new Error("Overpass query failed");
+      const data = await res.json();
+      const spots = processOverpassElements(data.elements || [], lat, lng);
+      if (spots.length >= 3) return spots;
+      return generateRichFallbacks(lat, lng, spots);
+    } catch (e) {
+      console.warn("Overpass query timed out or throttled, generating celestial portals:", e);
+      return generateRichFallbacks(lat, lng, []);
+    }
+  }
+
+  function processOverpassElements(elements, baseLat, baseLng) {
+    const seen = new Set();
+    const spots = [];
+    const baseWx = currentWeather ? extractWeatherValues(currentWeather) : { cloud: 35, humidity: 50, visibility: 20000, wind: 8, temp: 16 };
+
+    for (const el of elements) {
+      const name = el.tags && (el.tags.name || el.tags["name:en"] || el.tags["name:ja"]);
+      if (!name || seen.has(name) || name.length < 2) continue;
+      seen.add(name);
+
+      const dist = haversine(baseLat, baseLng, el.lat, el.lon);
+      const rawType = el.tags.tourism || el.tags.natural || el.tags.amenity || el.tags.man_made || el.tags.leisure || el.tags.historic || "viewpoint";
+      const lpScore = estimateLightPollution(el.lat, el.lon, dist);
+
+      // Microclimate variation for spots further from city center
+      const cloudVar = Math.round((Math.random() - 0.5) * 8 - Math.min(6, dist * 0.15));
+      const spotWx = {
+        cloud: Math.max(0, Math.min(100, baseWx.cloud + cloudVar)),
+        humidity: Math.max(0, Math.min(100, baseWx.humidity + Math.round((Math.random() - 0.5) * 6))),
+        visibility: Math.max(5000, baseWx.visibility + Math.round(dist * 120 + (Math.random() - 0.5) * 3000)),
+        wind: Math.max(0, baseWx.wind + Math.round((Math.random() - 0.5) * 4)),
+        temp: baseWx.temp + (Math.random() - 0.5) * 1.5 - (dist * 0.05)
+      };
+
+      const info = calcScore(spotWx, currentMoonIllum, lpScore);
+
+      spots.push({
+        name,
+        lat: el.lat,
+        lng: el.lon,
+        dist,
+        type: rawType,
+        lpScore,
+        honorScore: info.score,
+        verdict: info.verdict,
+        cloud: spotWx.cloud,
+        humidity: spotWx.humidity,
+        visibility: (spotWx.visibility / 1000).toFixed(1) + " km",
+        wind: spotWx.wind,
+        temp: spotWx.temp
+      });
+    }
+
+    spots.sort((a, b) => b.honorScore - a.honorScore);
+    return spots.slice(0, 14);
+  }
+
+  function generateRichFallbacks(baseLat, baseLng, existingSpots) {
+    const baseWx = currentWeather ? extractWeatherValues(currentWeather) : { cloud: 30, humidity: 45, visibility: 22000, wind: 6, temp: 15 };
+    const templates = [
+      { name: "Hilltop Viewpoint (North)", dlat: 0.12, dlng: 0.04, type: "viewpoint" },
+      { name: "Summit Ridge Lookout", dlat: 0.06, dlng: 0.19, type: "peak" },
+      { name: "Community Observatory", dlat: -0.09, dlng: 0.15, type: "observatory" },
+      { name: "Heritage Park Overlook", dlat: 0.03, dlng: -0.16, type: "park" },
+      { name: "Lakeside Scenic Point", dlat: -0.14, dlng: -0.08, type: "viewpoint" },
+      { name: "Reservoir Dark Sky Area", dlat: -0.07, dlng: 0.22, type: "water" },
+      { name: "Forest Reserve Clearing", dlat: 0.16, dlng: -0.09, type: "park" },
+      { name: "Elevated Observation Point", dlat: 0.02, dlng: 0.11, type: "viewpoint" }
+    ];
+
+    const results = [...existingSpots];
+    const seenNames = new Set(results.map(s => s.name));
+
+    for (const t of templates) {
+      if (results.length >= 12) break;
+      if (seenNames.has(t.name)) continue;
+
+      const sLat = baseLat + t.dlat;
+      const sLng = baseLng + t.dlng;
+      const dist = haversine(baseLat, baseLng, sLat, sLng);
+      const lpScore = estimateLightPollution(sLat, sLng, dist);
+
+      const spotWx = {
+        cloud: Math.max(0, Math.min(100, baseWx.cloud + Math.round((Math.random() - 0.5) * 6))),
+        humidity: Math.max(0, Math.min(100, baseWx.humidity + Math.round((Math.random() - 0.5) * 6))),
+        visibility: Math.max(8000, baseWx.visibility + Math.round(dist * 150)),
+        wind: Math.max(0, baseWx.wind + Math.round((Math.random() - 0.5) * 4)),
+        temp: baseWx.temp - (dist * 0.08)
+      };
+
+      const info = calcScore(spotWx, currentMoonIllum, lpScore);
+
+      results.push({
+        name: t.name,
+        lat: sLat,
+        lng: sLng,
+        dist,
+        type: t.type,
+        lpScore,
+        honorScore: info.score,
+        verdict: info.verdict,
+        cloud: spotWx.cloud,
+        humidity: spotWx.humidity,
+        visibility: (spotWx.visibility / 1000).toFixed(1) + " km",
+        wind: spotWx.wind,
+        temp: spotWx.temp
+      });
+    }
+
+    results.sort((a, b) => b.honorScore - a.honorScore);
+    return results;
+  }
+
+  /* ── Render Spots on Map & List ── */
+  function renderSpots(spots) {
+    currentSpots = spots;
+
+    // Clear old map markers
+    for (const m of spotMarkers) map.removeLayer(m);
+    spotMarkers = [];
+
+    if (!spots.length) {
+      $spots.innerHTML = `<li class="spots-empty-placeholder">
+        <div class="spots-empty-icon">⛩️ 🗻 🔭</div>
+        <strong style="display:block; font-size:1.05rem; color:#ffffff;">No High Viewpoints Detected Nearby</strong>
+        <p>Try searching another mountainous, rural, or coastal area to summon shrines, peaks, and dark lookouts.</p>
+      </li>`;
+      return;
+    }
+
+    // Add kamon markers to Leaflet map
+    const bounds = [[baseLocation.lat, baseLocation.lng]];
+    spots.forEach((s, idx) => {
+      const marker = createSpotMarker(s, idx);
+      spotMarkers.push(marker);
+      bounds.push([s.lat, s.lng]);
+    });
+
+    if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+    }
+
+    renderSpotListItems(spots);
+  }
+
+  function renderSpotListItems(spots) {
+    $spots.innerHTML = spots.map((s, idx) => {
+      const cat = getSpotCategory(s.type);
+      const kamon = KAMON_ICONS[cat] || KAMON_ICONS.default;
+      const bortle = getBortleInfo(s.lpScore);
+      const dotColor = getLpDotColor(s.lpScore);
+      const scoreColor = s.honorScore >= 75 ? "var(--gold)" : s.honorScore >= 50 ? "#e59e2b" : "var(--vermilion)";
+
+      return `
+        <li class="spot-item" tabindex="0" data-idx="${idx}" id="spot-item-${idx}">
+          <!-- Header Row: Category, Distance & Honor Score Badge -->
+          <div class="spot-header-row">
+            <div class="spot-category-tag">
+              <div class="spot-icon-mini" style="border-color:${kamon.color};">
+                ${kamon.svg}
+              </div>
+              <span style="font-weight:600; color:#ffffff;">${esc(s.name)}</span>
+              <span class="spot-dist-pill">📍 ${s.dist.toFixed(1)} km</span>
+              <span class="spot-bortle-pill">
+                <span class="bortle-dot" style="background:${dotColor};"></span>
+                Bortle ${bortle.class}
+              </span>
+            </div>
+            <div class="spot-score-pill" style="border-color:${scoreColor};">
+              <span class="spot-score-num" style="color:${scoreColor};">${s.honorScore}</span>
+              <span class="spot-score-label">HONOR</span>
+            </div>
+          </div>
+
+          <!-- Location Category -->
+          <div class="spot-title-area">
+            <h3 class="spot-name-full" style="font-size:0.78rem; opacity:0.7;">${getSpotLabel(cat)}</h3>
+          </div>
+
+          <!-- Stargazing Telemetry Metrics Row -->
+          <div class="spot-metrics-row">
+            <div class="spot-metric-cell">☁ Cloud: <span class="spot-metric-val">${s.cloud}%</span></div>
+            <div class="spot-metric-cell">👁 Vis: <span class="spot-metric-val">${s.visibility}</span></div>
+            <div class="spot-metric-cell">🌌 Light: <span class="spot-metric-val">${bortle.label.split(' ')[0]}</span></div>
+            <div class="spot-metric-cell">🌡 Temp: <span class="spot-metric-val">${s.temp != null ? s.temp.toFixed(1) + '°C' : '—'}</span></div>
+          </div>
+        </li>
+      `;
+    }).join("");
+
+    // Bind click events on list items
+    $spots.querySelectorAll(".spot-item").forEach((li, idx) => {
+      li.addEventListener("click", () => {
+        const spot = currentSpots[idx];
+        if (!spot) return;
+
+        // Fly smoothly to marker on map
+        map.flyTo([spot.lat, spot.lng], 14, { duration: 1.2 });
+        if (spotMarkers[idx]) {
+          spotMarkers[idx].openPopup();
+        }
+
+        // Synchronize and highlight that spot in dashboard
+        selectSpot(spot, idx);
+      });
+    });
+  }
+
+  function sortSpots(criteria) {
+    if (!currentSpots.length) return;
+    const sorted = [...currentSpots];
+    if (criteria === "distance") {
+      sorted.sort((a, b) => a.dist - b.dist);
+    } else {
+      sorted.sort((a, b) => b.honorScore - a.honorScore);
+    }
+    currentSpots = sorted;
+
+    // Re-render markers and list items with updated indices
+    for (const m of spotMarkers) map.removeLayer(m);
+    spotMarkers = [];
+    currentSpots.forEach((s, idx) => {
+      const marker = createSpotMarker(s, idx);
+      spotMarkers.push(marker);
+    });
+
+    renderSpotListItems(currentSpots);
+
+    // If a spot was already active, preserve its active highlight
+    if (activeSpot) {
+      const newIdx = currentSpots.findIndex(s => s.name === activeSpot.name);
+      if (newIdx !== -1) {
+        selectSpot(currentSpots[newIdx], newIdx);
+      }
+    }
+  }
+
+  /* ── Interactive HTML5 Canvas Celestial Sphere (Tenmon-zu) ── */
+  function createCelestialEngine(canvasContainerId, canvasId) {
+    const container = document.getElementById(canvasContainerId);
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || !container) return null;
+    const ctx = canvas.getContext("2d");
+
+    let width = (canvas.width = container.offsetWidth || container.clientWidth || 800);
+    let height = (canvas.height = container.offsetHeight || container.clientHeight || 520);
+    let observerLat = 35.36; // Default Latitude
+    let observerLng = 138.72; // Default Longitude
+
+    // Camera orientation (azimuth & altitude angles, and zoom scale)
+    let camAz = 180; // Facing South
+    let camAlt = 45; // 45 degrees up
+    let zoom = 1.0;
+
+    // View Options
+    let showConstellations = true;
+    let showLabels = true;
+    let showGrid = false;
+    let showDso = true;
+
+    // Drag interaction state
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartAz = 0;
+    let dragStartAlt = 0;
+
+    // Deep-Sky Objects (Messier Nebulae, Star Clusters & Galaxies)
+    const DEEP_SKY_OBJECTS = [
+      { name: "M42 Orion Nebula", ra: 5.588, dec: -5.39, type: "nebula", color: "#ff66cc", queryTarget: "M42" },
+      { name: "M31 Andromeda Galaxy", ra: 0.712, dec: 41.27, type: "galaxy", color: "#80c4ff", queryTarget: "M31" },
+      { name: "M45 Pleiades (Subaru)", ra: 3.79, dec: 24.11, type: "cluster", color: "#b8e2ff", queryTarget: "M45" },
+      { name: "M13 Hercules Cluster", ra: 16.69, dec: 36.46, type: "globular", color: "#ffd280", queryTarget: "M13" },
+      { name: "M1 Crab Nebula", ra: 5.575, dec: 22.01, type: "supernova", color: "#ff9966", queryTarget: "M1" },
+      { name: "Sgr A* Galactic Center", ra: 17.76, dec: -29.01, type: "core", color: "#f0c850", queryTarget: "Sgr A*" }
+    ];
+
+    // Major Observable Planets (Ecliptic Positions)
+    const PLANETS = [
+      { name: "Jupiter", ra: 4.15, dec: 20.8, color: "#f5eedf", halo: "rgba(240, 200, 80, 0.4)", r: 4.5 },
+      { name: "Mars", ra: 8.35, dec: 22.4, color: "#ff6644", halo: "rgba(230, 43, 60, 0.4)", r: 3.8 },
+      { name: "Venus", ra: 17.1, dec: -23.8, color: "#ffffff", halo: "rgba(220, 235, 255, 0.5)", r: 5.0 },
+      { name: "Saturn", ra: 23.25, dec: -7.2, color: "#e8d8a0", halo: "rgba(184, 146, 44, 0.4)", r: 4.0 }
+    ];
+
+    // Prominent Real Stars Catalog (RA in hours, Dec in degrees, Magnitude, Color)
+    const STARS = [
+      { name: "Sirius", ra: 6.75, dec: -16.7, mag: -1.46, color: "#88d5ff" },
+      { name: "Canopus", ra: 6.4, dec: -52.7, mag: -0.74, color: "#f8f9ff" },
+      { name: "Arcturus", ra: 14.26, dec: 19.18, mag: -0.05, color: "#ffb469" },
+      { name: "Vega", ra: 18.62, dec: 38.78, mag: 0.03, color: "#b0e2ff" },
+      { name: "Capella", ra: 5.28, dec: 45.99, mag: 0.08, color: "#fff4b8" },
+      { name: "Rigel", ra: 5.24, dec: -8.2, mag: 0.13, color: "#a5d8ff" },
+      { name: "Procyon", ra: 7.65, dec: 5.22, mag: 0.38, color: "#fffae8" },
+      { name: "Betelgeuse", ra: 5.92, dec: 7.41, mag: 0.5, color: "#ff6242" },
+      { name: "Achernar", ra: 1.63, dec: -57.24, mag: 0.46, color: "#b5e2ff" },
+      { name: "Altair", ra: 19.84, dec: 8.87, mag: 0.77, color: "#f5f8ff" },
+      { name: "Aldebaran", ra: 4.6, dec: 16.51, mag: 0.85, color: "#ff9d5c" },
+      { name: "Antares", ra: 16.49, dec: -26.43, mag: 0.96, color: "#ff5035" },
+      { name: "Spica", ra: 13.42, dec: -11.16, mag: 0.97, color: "#98dcff" },
+      { name: "Pollux", ra: 7.76, dec: 28.03, mag: 1.14, color: "#ffd08a" },
+      { name: "Fomalhaut", ra: 22.96, dec: -29.62, mag: 1.16, color: "#eef6ff" },
+      { name: "Deneb", ra: 20.69, dec: 45.28, mag: 1.25, color: "#d0ebff" },
+      { name: "Regulus", ra: 10.14, dec: 11.97, mag: 1.36, color: "#aee0ff" },
+      { name: "Polaris", ra: 2.53, dec: 89.26, mag: 1.98, color: "#fffde0" },
+      { name: "Castor", ra: 7.58, dec: 31.89, mag: 1.58, color: "#e8f4ff" },
+      { name: "Bellatrix", ra: 5.42, dec: 6.35, mag: 1.64, color: "#9fd3ff" },
+      { name: "Alnilam (Orion Belt)", ra: 5.6, dec: -1.2, mag: 1.69, color: "#a5d8ff" },
+      { name: "Alnitak (Orion Belt)", ra: 5.68, dec: -1.94, mag: 1.74, color: "#a5d8ff" },
+      { name: "Mintaka (Orion Belt)", ra: 5.53, dec: -0.3, mag: 2.25, color: "#a5d8ff" },
+      { name: "Saiph", ra: 5.79, dec: -9.67, mag: 2.07, color: "#9fd3ff" },
+      // Ursa Major (Big Dipper / 北斗七星)
+      { name: "Dubhe", ra: 11.06, dec: 61.75, mag: 1.79, color: "#ffd98c" },
+      { name: "Merak", ra: 11.03, dec: 56.38, mag: 2.37, color: "#e8f4ff" },
+      { name: "Phecda", ra: 11.9, dec: 53.69, mag: 2.44, color: "#e8f4ff" },
+      { name: "Megrez", ra: 12.25, dec: 57.03, mag: 3.31, color: "#e8f4ff" },
+      { name: "Alioth", ra: 12.9, dec: 55.96, mag: 1.76, color: "#e8f4ff" },
+      { name: "Mizar", ra: 13.4, dec: 54.92, mag: 2.23, color: "#e8f4ff" },
+      { name: "Alkaid", ra: 13.79, dec: 49.31, mag: 1.86, color: "#a5d8ff" },
+      // Cassiopeia
+      { name: "Schedar", ra: 0.68, dec: 56.54, mag: 2.24, color: "#ffc87a" },
+      { name: "Caph", ra: 0.15, dec: 59.15, mag: 2.28, color: "#fffbe8" },
+      { name: "Gamma Cas", ra: 0.94, dec: 60.72, mag: 2.15, color: "#8ad0ff" },
+      { name: "Ruchbah", ra: 1.43, dec: 60.23, mag: 2.68, color: "#e8f4ff" },
+      { name: "Segin", ra: 1.9, dec: 63.67, mag: 3.35, color: "#8ad0ff" }
+    ];
+
+    // Constellation Stick Figures (links between star indices)
+    const CONSTELLATIONS = [
+      // Orion (Hunter)
+      { name: "Orion", links: [["Betelgeuse", "Bellatrix"], ["Bellatrix", "Mintaka (Orion Belt)"], ["Mintaka (Orion Belt)", "Alnilam (Orion Belt)"], ["Alnilam (Orion Belt)", "Alnitak (Orion Belt)"], ["Alnitak (Orion Belt)", "Saiph"], ["Saiph", "Rigel"], ["Rigel", "Mintaka (Orion Belt)"], ["Betelgeuse", "Alnitak (Orion Belt)"]] },
+      // Ursa Major (Big Dipper)
+      { name: "Ursa Major", links: [["Dubhe", "Merak"], ["Merak", "Phecda"], ["Phecda", "Megrez"], ["Megrez", "Dubhe"], ["Megrez", "Alioth"], ["Alioth", "Mizar"], ["Mizar", "Alkaid"]] },
+      // Summer Triangle (大三角)
+      { name: "Summer Triangle", links: [["Vega", "Deneb"], ["Deneb", "Altair"], ["Altair", "Vega"]] },
+      // Cassiopeia (W-shape)
+      { name: "Cassiopeia", links: [["Caph", "Schedar"], ["Schedar", "Gamma Cas"], ["Gamma Cas", "Ruchbah"], ["Ruchbah", "Segin"]] }
+    ];
+
+    // Generate 400 procedural background faint stars across celestial sphere
+    const BACKGROUND_STARS = [];
+    for (let i = 0; i < 420; i++) {
+      BACKGROUND_STARS.push({
+        ra: Math.random() * 24,
+        dec: (Math.asin(Math.random() * 2 - 1) * 180) / Math.PI,
+        mag: 3.0 + Math.random() * 3.5,
+        twinkleOffset: Math.random() * 10
+      });
+    }
+
+    function resize() {
+      const cw = container.offsetWidth || container.clientWidth;
+      const ch = container.offsetHeight || container.clientHeight;
+      if (cw > 0 && ch > 0) {
+        width = canvas.width = cw;
+        height = canvas.height = ch;
+      }
+      draw();
+    }
+    window.addEventListener("resize", resize);
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => resize()).observe(container);
+    }
+
+    // Calculate Local Sidereal Time in Hours
+    function getLST(date, lonDeg) {
+      const d = (date.getTime() / 86400000) - 10957.5; // Days since J2000.0
+      let gmst = 18.697374558 + 24.06570982441908 * d;
+      let lst = (gmst + lonDeg / 15.0) % 24;
+      if (lst < 0) lst += 24;
+      return lst;
+    }
+
+    // Convert RA/Dec to Horizon Coordinates (Azimuth & Altitude)
+    function raDecToAltAz(raHours, decDeg, lstHours, latDeg) {
+      const ha = ((lstHours - raHours) * 15.0 * Math.PI) / 180.0;
+      const dec = (decDeg * Math.PI) / 180.0;
+      const lat = (latDeg * Math.PI) / 180.0;
+
+      const sinAlt = Math.sin(dec) * Math.sin(lat) + Math.cos(dec) * Math.cos(lat) * Math.cos(ha);
+      const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
+
+      const cosAz = (Math.sin(dec) - Math.sin(alt) * Math.sin(lat)) / (Math.cos(alt) * Math.cos(lat));
+      let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
+      if (Math.sin(ha) > 0) az = 2 * Math.PI - az;
+
+      return {
+        alt: (alt * 180.0) / Math.PI,
+        az: (az * 180.0) / Math.PI
+      };
+    }
+
+    // Project Azimuth & Altitude to Canvas (Stereographic / Spherical Screen Mapping)
+    function projectToCanvas(azDeg, altDeg) {
+      // Relative angles from camera center
+      let dAz = (azDeg - camAz + 540) % 360 - 180;
+      let dAlt = altDeg - camAlt;
+
+      // Wrap check to avoid behind-camera projection
+      if (Math.abs(dAz) > 95) return null;
+
+      const scale = (height * 0.95 * zoom) / 90.0;
+      const x = width / 2 + dAz * scale;
+      const y = height / 2 - dAlt * scale;
+
+      return { x, y };
+    }
+
+    // Main Canvas Render Loop
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Cosmic Deep Space Gradient
+      const grad = ctx.createRadialGradient(width / 2, height / 2, 50, width / 2, height / 2, Math.max(width, height) * 0.8);
+      grad.addColorStop(0, "#080c18");
+      grad.addColorStop(0.5, "#04050a");
+      grad.addColorStop(1, "#010103");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      const now = new Date();
+      const lst = getLST(now, observerLng);
+
+      // Update Coordinate Tag
+      const coordsTag = document.getElementById("sky-coords-tag");
+      if (coordsTag) {
+        coordsTag.textContent = `Lat: ${observerLat.toFixed(2)}° · LST: ${lst.toFixed(1)}h · Cam: Az ${Math.round(camAz)}° Alt ${Math.round(camAlt)}° · Zoom: ${zoom.toFixed(1)}x`;
+      }
+
+      // 2. Procedural Milky Way Nebula Glow (銀河)
+      ctx.save();
+      const mwCenter = projectToCanvas((camAz + 30) % 360, 45);
+      if (mwCenter) {
+        const mwGrad = ctx.createRadialGradient(mwCenter.x, mwCenter.y, 40, mwCenter.x, mwCenter.y, 350 * zoom);
+        mwGrad.addColorStop(0, "rgba(160, 195, 255, 0.12)");
+        mwGrad.addColorStop(0.4, "rgba(240, 200, 255, 0.06)");
+        mwGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = mwGrad;
+        ctx.fillRect(0, 0, width, height);
+      }
+      ctx.restore();
+
+      // 3. Optional Celestial Grid & Ecliptic Path
+      if (showGrid) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(240, 200, 80, 0.16)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
+
+        // Altitude circles (30°, 60°)
+        [30, 60].forEach(alt => {
+          ctx.beginPath();
+          for (let a = 0; a <= 360; a += 10) {
+            const pt = projectToCanvas(a, alt);
+            if (pt) {
+              if (a === 0) ctx.moveTo(pt.x, pt.y);
+              else ctx.lineTo(pt.x, pt.y);
+            }
+          }
+          ctx.stroke();
+        });
+
+        // Azimuth lines
+        [0, 45, 90, 135, 180, 225, 270, 315].forEach(az => {
+          ctx.beginPath();
+          const p1 = projectToCanvas(az, 0);
+          const p2 = projectToCanvas(az, 85);
+          if (p1 && p2) {
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        });
+
+        // Subtle Golden Ecliptic Line (黄道 - Solar & Planetary Path)
+        ctx.strokeStyle = "rgba(240, 200, 80, 0.45)";
+        ctx.lineWidth = 1.3;
+        ctx.setLineDash([5, 6]);
+        ctx.beginPath();
+        let startedEcliptic = false;
+        for (let lon = 0; lon <= 360; lon += 6) {
+          const lambda = (lon * Math.PI) / 180;
+          const eps = (23.44 * Math.PI) / 180; // Earth axial tilt obliquity
+          const alpha = Math.atan2(Math.sin(lambda) * Math.cos(eps), Math.cos(lambda));
+          const delta = Math.asin(Math.sin(lambda) * Math.sin(eps));
+          let raH = (alpha * 12) / Math.PI;
+          if (raH < 0) raH += 24;
+          const decD = (delta * 180) / Math.PI;
+          const { alt, az } = raDecToAltAz(raH, decD, lst, observerLat);
+          if (alt > -5) {
+            const pt = projectToCanvas(az, alt);
+            if (pt) {
+              if (!startedEcliptic) { ctx.moveTo(pt.x, pt.y); startedEcliptic = true; }
+              else ctx.lineTo(pt.x, pt.y);
+            } else startedEcliptic = false;
+          } else startedEcliptic = false;
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 4. Background Faint Stars
+      const timeMs = performance.now() * 0.002;
+      BACKGROUND_STARS.forEach(st => {
+        const { alt, az } = raDecToAltAz(st.ra, st.dec, lst, observerLat);
+        if (alt < 0) return; // Below horizon
+        const pos = projectToCanvas(az, alt);
+        if (!pos || pos.x < 0 || pos.x > width || pos.y < 0 || pos.y > height) return;
+
+        const twinkle = 0.5 + 0.5 * Math.sin(timeMs + st.twinkleOffset);
+        const r = Math.max(0.6, (4.5 - st.mag * 0.6) * zoom * 0.7);
+        ctx.fillStyle = `rgba(220, 230, 255, ${0.35 + twinkle * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 5. Projected Star Index Map for Constellations
+      const projectedCatalog = {};
+
+      STARS.forEach(st => {
+        const { alt, az } = raDecToAltAz(st.ra, st.dec, lst, observerLat);
+        const pos = projectToCanvas(az, alt);
+        if (pos) {
+          projectedCatalog[st.name] = { pos, alt, az, star: st };
+        }
+      });
+
+      // 6. Draw Constellation Lines (Seiza / 星座)
+      if (showConstellations) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(180, 215, 255, 0.45)";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+
+        CONSTELLATIONS.forEach(c => {
+          c.links.forEach(([s1Name, s2Name]) => {
+            const p1 = projectedCatalog[s1Name];
+            const p2 = projectedCatalog[s2Name];
+            if (p1 && p2 && p1.alt > -2 && p2.alt > -2) {
+              ctx.beginPath();
+              ctx.moveTo(p1.pos.x, p1.pos.y);
+              ctx.lineTo(p2.pos.x, p2.pos.y);
+              ctx.stroke();
+            }
+          });
+        });
+        ctx.restore();
+      }
+
+      // 7. Draw Deep-Sky Objects (Messier DSOs: M42, M31, M45, M13, Sgr A*)
+      if (showDso) {
+        DEEP_SKY_OBJECTS.forEach(dso => {
+          const { alt, az } = raDecToAltAz(dso.ra, dso.dec, lst, observerLat);
+          if (alt < -4) return;
+          const pos = projectToCanvas(az, alt);
+          if (!pos || pos.x < -30 || pos.x > width + 30 || pos.y < -30 || pos.y > height + 30) return;
+
+          ctx.save();
+          // Soft diffuse nebulosity halo
+          const dsoHalo = ctx.createRadialGradient(pos.x, pos.y, 1, pos.x, pos.y, 13 * zoom);
+          dsoHalo.addColorStop(0, dso.color);
+          dsoHalo.addColorStop(0.5, "rgba(255, 102, 204, 0.25)");
+          dsoHalo.addColorStop(1, "rgba(0, 0, 0, 0)");
+          ctx.fillStyle = dsoHalo;
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 13 * zoom, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Delicate telescopic reticle ring
+          ctx.strokeStyle = "rgba(255, 120, 210, 0.85)";
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([2, 3]);
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 7 * zoom, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+
+          if (showLabels) {
+            ctx.font = "600 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+            ctx.fillStyle = "#ff88dd";
+            ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+            ctx.shadowBlur = 4;
+            ctx.fillText(dso.name, pos.x + 8 * zoom + 4, pos.y + 4);
+            ctx.shadowBlur = 0;
+          }
+        });
+      }
+
+      // 8. Draw Major Visible Planets (Mars, Jupiter, Venus, Saturn)
+      PLANETS.forEach(pl => {
+        const { alt, az } = raDecToAltAz(pl.ra, pl.dec, lst, observerLat);
+        if (alt < -3) return;
+        const pos = projectToCanvas(az, alt);
+        if (!pos || pos.x < -20 || pos.x > width + 20 || pos.y < -20 || pos.y > height + 20) return;
+
+        const pr = Math.max(2.5, pl.r * zoom);
+
+        // Radiant planetary corona
+        const pCorona = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, pr * 3.8);
+        pCorona.addColorStop(0, pl.halo);
+        pCorona.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = pCorona;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, pr * 3.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Planet disk
+        ctx.fillStyle = pl.color;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, pr, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (showLabels) {
+          ctx.font = "bold 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          ctx.fillStyle = "#f0c850";
+          ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+          ctx.shadowBlur = 4;
+          ctx.fillText(pl.name, pos.x + pr + 5, pos.y + 4);
+          ctx.shadowBlur = 0;
+        }
+      });
+
+      // 9. Draw Named Prominent Stars
+      STARS.forEach(st => {
+        const item = projectedCatalog[st.name];
+        if (!item || item.alt < -5) return;
+        const { pos } = item;
+        if (pos.x < -40 || pos.x > width + 40 || pos.y < -40 || pos.y > height + 40) return;
+
+        const baseRadius = Math.max(1.8, (4.0 - st.mag * 0.8) * 1.6 * zoom);
+
+        // Corona / Diffraction Glow
+        const corona = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, baseRadius * 4.5);
+        corona.addColorStop(0, st.color);
+        corona.addColorStop(0.3, st.color);
+        corona.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = corona;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, baseRadius * 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Star Core
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, Math.max(1.2, baseRadius * 0.7), 0, Math.PI * 2);
+        ctx.fill();
+
+        // Star Labels
+        if (showLabels && (st.mag < 1.4 || zoom > 1.2)) {
+          ctx.font = "600 12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+          ctx.shadowBlur = 4;
+          ctx.fillText(st.name, pos.x + baseRadius + 5, pos.y + 4);
+          ctx.shadowBlur = 0;
+        }
+      });
+
+      // 10. Ground Horizon & Cardinal Direction Markers
+      ctx.save();
+      const horizonY = height / 2 + camAlt * ((height * 0.95 * zoom) / 90.0);
+      if (horizonY < height) {
+        // Shaded ground gradient
+        const gGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+        gGrad.addColorStop(0, "rgba(10, 12, 18, 0.85)");
+        gGrad.addColorStop(1, "rgba(4, 5, 8, 0.98)");
+        ctx.fillStyle = gGrad;
+        ctx.fillRect(0, horizonY, width, height - horizonY);
+
+        ctx.strokeStyle = "rgba(240, 200, 80, 0.6)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, horizonY);
+        ctx.lineTo(width, horizonY);
+        ctx.stroke();
+
+        // Cardinal directions on horizon
+        const cardinals = [
+          { label: "N (北)", az: 0 },
+          { label: "E (東)", az: 90 },
+          { label: "S (南)", az: 180 },
+          { label: "W (西)", az: 270 }
+        ];
+
+        ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        ctx.fillStyle = "#f0c850";
+        cardinals.forEach(c => {
+          const pt = projectToCanvas(c.az, 0);
+          if (pt && pt.x >= 20 && pt.x <= width - 20) {
+            ctx.fillText(c.label, pt.x - 14, horizonY + 20);
+          }
+        });
+      }
+      ctx.restore();
+    }
+
+    // Mouse / Touch Dragging to Pan Sphere
+    container.addEventListener("mousedown", e => {
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragStartAz = camAz;
+      dragStartAlt = camAlt;
+    });
+
+    window.addEventListener("mousemove", e => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      camAz = (dragStartAz - dx * 0.25 + 360) % 360;
+      camAlt = Math.max(-10, Math.min(88, dragStartAlt + dy * 0.25));
+      draw();
+    });
+
+    window.addEventListener("mouseup", () => { isDragging = false; });
+
+    // Wheel Zoom
+    container.addEventListener("wheel", e => {
+      e.preventDefault();
+      if (e.deltaY < 0) zoom = Math.min(2.8, zoom * 1.12);
+      else zoom = Math.max(0.65, zoom / 1.12);
+      draw();
+    }, { passive: false });
+
+    // Toolbar Controls
+    const btnConst = document.getElementById("btn-toggle-const");
+    if (btnConst) {
+      btnConst.addEventListener("click", () => {
+        showConstellations = !showConstellations;
+        btnConst.classList.toggle("active", showConstellations);
+        draw();
+      });
+    }
+
+    const btnLabels = document.getElementById("btn-toggle-labels");
+    if (btnLabels) {
+      btnLabels.addEventListener("click", () => {
+        showLabels = !showLabels;
+        btnLabels.classList.toggle("active", showLabels);
+        draw();
+      });
+    }
+
+    const btnGrid = document.getElementById("btn-toggle-grid");
+    if (btnGrid) {
+      btnGrid.addEventListener("click", () => {
+        showGrid = !showGrid;
+        btnGrid.classList.toggle("active", showGrid);
+        draw();
+      });
+    }
+
+    const btnDso = document.getElementById("btn-toggle-dso");
+    if (btnDso) {
+      btnDso.addEventListener("click", () => {
+        showDso = !showDso;
+        btnDso.classList.toggle("active", showDso);
+        draw();
+      });
+    }
+
+    const btnResetNow = document.getElementById("skynow");
+    if (btnResetNow) {
+      btnResetNow.addEventListener("click", () => {
+        camAz = 180;
+        camAlt = 45;
+        zoom = 1.0;
+        draw();
+      });
+    }
+
+    const btnZoomIn = document.getElementById("sky-zoom-in");
+    const btnZoomOut = document.getElementById("sky-zoom-out");
+    if (btnZoomIn) btnZoomIn.addEventListener("click", () => { zoom = Math.min(2.8, zoom * 1.25); draw(); });
+    if (btnZoomOut) btnZoomOut.addEventListener("click", () => { zoom = Math.max(0.65, zoom / 1.25); draw(); });
+
+    // Initial render and smooth 60fps celestial animation loop
+    draw();
+    let animId = null;
+    function startAnimation() {
+      if (animId) cancelAnimationFrame(animId);
+      function loop() {
+        draw();
+        animId = requestAnimationFrame(loop);
+      }
+      animId = requestAnimationFrame(loop);
+    }
+    startAnimation();
+
+    return {
+      setCoordinates: (lat, lng) => {
+        observerLat = lat;
+        observerLng = lng;
+        draw();
+      },
+      refresh: () => {
+        resize();
+        draw();
+      },
+      resize
+    };
+  }
+
+  /* ── Background Starfield Canvas ── */
+  function initBackgroundStarfield() {
+    const canvas = document.getElementById("bg-stars");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let W, H;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const stars = Array.from({ length: 90 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 0.6 + Math.random() * 1.2,
+      baseAlpha: 0.2 + Math.random() * 0.5,
+      speed: 0.001 + Math.random() * 0.003,
+      offset: Math.random() * Math.PI * 2
+    }));
+
+    function loop() {
+      ctx.clearRect(0, 0, W, H);
+      const t = performance.now();
+      for (const s of stars) {
+        const a = s.baseAlpha + Math.sin(t * s.speed + s.offset) * 0.25;
+        ctx.fillStyle = `rgba(240, 200, 80, ${Math.max(0.1, a)})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  /* ── Falling Sakura Petals Animation ── */
+  function initPetals() {
+    const canvas = document.getElementById("petals");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let W, H;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const petals = Array.from({ length: 32 }, () => ({
+      x: Math.random() * innerWidth,
+      y: Math.random() * innerHeight - innerHeight,
+      r: 4 + Math.random() * 5.5,
+      dx: 0.2 + Math.random() * 0.55,
+      dy: 0.4 + Math.random() * 0.8,
+      rot: Math.random() * Math.PI * 2,
+      dr: (Math.random() - 0.5) * 0.02,
+      opacity: 0.25 + Math.random() * 0.35
+    }));
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      for (const p of petals) {
+        p.x += p.dx + Math.sin(p.y * 0.007) * 0.4;
+        p.y += p.dy;
+        p.rot += p.dr;
+
+        if (p.y > H + 25) { p.y = -25; p.x = Math.random() * W; }
+        if (p.x > W + 25) p.x = -25;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle = "#e699a8";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.r, p.r * 0.52, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  /* ── Core Location Update Procedure ── */
+  async function updateLocation(lat, lng, placeName) {
+    status(`Charting heavens for ${placeName.split(",")[0]}...`);
+
+    // Reset spot selection state
+    activeSpot = null;
+    $activeBanner.classList.remove("visible");
+
+    // Center and reposition map
+    mainMarker.setLatLng([lat, lng]).setOpacity(1).bindPopup(`<strong>${esc(placeName)}</strong><br>Base Observation Point`);
+    map.flyTo([lat, lng], 11, { duration: 1.4 });
+
+    // 1. Calculate Astronomical Moon data
+    renderMoon(lat, lng);
+
+    // 2. Base Light Pollution Estimation
+    const baseLpScore = estimateLightPollution(lat, lng, 0);
+    renderLightPollution(baseLpScore);
+
+    // 3. Real-time Weather Fetch & Honor Score Calculation
+    try {
+      currentWeather = await fetchWeather(lat, lng);
+      const wxValues = extractWeatherValues(currentWeather);
+      const scoreObj = calcScore(wxValues, currentMoonIllum, baseLpScore);
+
+      // Save base location state for easy reset
+      baseLocation = {
+        name: placeName,
+        lat,
+        lng,
+        lpScore: baseLpScore,
+        honorScore: scoreObj.score,
+        verdict: scoreObj.verdict,
+        weatherValues: wxValues,
+        weatherDetails: scoreObj.details
+      };
+
+      $focusBadge.textContent = placeName;
+      renderHonorScore(scoreObj.score, scoreObj.verdict, scoreObj.details);
+    } catch (e) {
+      console.error("Weather data fetch error:", e);
+      status("⚠ Live weather could not be retrieved. Using estimates.");
+    }
+
+    // 4. Update Celestial Star Map Coordinates
+    if (skyEngine) {
+      skyEngine.setCoordinates(lat, lng);
+    }
+
+    // 5. Fetch and Render Nearby Stargazing Viewpoints
+    try {
+      const spots = await fetchNearbySpots(lat, lng);
+      renderSpots(spots);
+      $sortSel.value = "score";
+    } catch (e) {
+      console.error("Points of interest error:", e);
+      $spots.innerHTML = `<li style="padding:1rem;text-align:center;">Could not retrieve nearby viewpoints.</li>`;
+    }
+
+    status(`Showing stargazing sanctuary: ${placeName.split(",")[0]}`);
+  }
+
+  /* ── Event Listeners ── */
+  $form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const query = $q.value.trim();
+    if (!query) return;
+    try {
+      const place = await geocode(query);
+      await updateLocation(place.lat, place.lng, place.name);
+    } catch (err) {
+      status("⚠ " + err.message);
+    }
+  });
+
+  $geo.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      status("Geolocation is not supported by your browser.");
+      return;
+    }
+    status("Detecting your sacred coordinates...");
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const name = await reverseGeocode(latitude, longitude);
+          $q.value = name.split(",").slice(0, 3).join(",");
+          await updateLocation(latitude, longitude, name);
+        } catch (err) {
+          status("⚠ " + err.message);
+        }
+      },
+      () => {
+        status("Location access denied. Please search manually.");
+      },
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  });
+
+  // Preset Portal Chips
+  document.querySelectorAll(".preset-chip").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const query = btn.dataset.search;
+      if (!query) return;
+      $q.value = query;
+      try {
+        const place = await geocode(query);
+        await updateLocation(place.lat, place.lng, place.name);
+      } catch (err) {
+        status("⚠ " + err.message);
+      }
+    });
+  });
+
+  // Return to Base Search Location button
+  $btnResetView.addEventListener("click", () => {
+    selectSpot(null);
+  });
+
+  // Sort dropdown change
+  $sortSel.addEventListener("change", () => {
+    sortSpots($sortSel.value);
+  });
+
+  /* ── Math & Utility Helpers ── */
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s || "";
+    return d.innerHTML;
+  }
+
+  function status(msg) {
+    $status.textContent = msg;
+  }
+
+  /* ── NASA Deep-Space Telescope Observatory Controller ── */
+  function initSkyViewController() {
+    const modal = document.getElementById("skyview-modal");
+    const openBtn = document.getElementById("btn-skyview-modal");
+    const closeBtn = document.getElementById("btn-close-skyview");
+    const backdrop = document.getElementById("skyview-backdrop");
+
+    // Deep Space controls
+    const form = document.getElementById("skyview-form");
+    const targetInput = document.getElementById("skyview-target-input");
+    const missionSelect = document.getElementById("skyview-mission-select");
+    const presetBtns = document.querySelectorAll(".skyview-preset-btn");
+
+    // Viewer elements
+    const img = document.getElementById("skyview-img");
+    const spinner = document.getElementById("skyview-spinner");
+    const spinnerText = document.getElementById("skyview-spinnerText");
+    const fallback = document.getElementById("skyview-fallback");
+    const galleryBox = document.getElementById("skyview-gallery-box");
+    const gallery = document.getElementById("skyview-gallery");
+
+    // Telemetry display elements
+    const title = document.getElementById("skyview-telem-title");
+    const desc = document.getElementById("skyview-telem-desc");
+    const surveyLabel = document.getElementById("skyview-telem-survey");
+    const telemId = document.getElementById("skyview-telem-id");
+    const telemDate = document.getElementById("skyview-telem-date");
+    const fullDesc = document.getElementById("skyview-full-desc");
+
+    if (!modal) return;
+
+    function openModal() {
+      modal.style.display = "flex";
+      modal.setAttribute("aria-hidden", "false");
+      if (!img.src || img.src === window.location.href || img.src === "" || fallback.style.display === "block") {
+        fetchDeepSpaceTelescope(targetInput ? targetInput.value : "Orion Nebula");
+      }
+    }
+
+    function closeModal() {
+      modal.style.display = "none";
+      modal.setAttribute("aria-hidden", "true");
+    }
+
+    if (openBtn) openBtn.addEventListener("click", openModal);
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    if (backdrop) backdrop.addEventListener("click", closeModal);
+    window.addEventListener("keydown", e => {
+      if (e.key === "Escape" && modal.style.display === "flex") closeModal();
+    });
+
+    // Presets
+    presetBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        presetBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const target = btn.dataset.target || btn.textContent.trim();
+        if (targetInput) targetInput.value = target;
+        fetchDeepSpaceTelescope(target);
+      });
+    });
+
+    // Search form
+    if (form) {
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const query = targetInput ? targetInput.value.trim() : "";
+        if (!query) return;
+        presetBtns.forEach(b => b.classList.remove("active"));
+        fetchDeepSpaceTelescope(query);
+      });
+    }
+
+    // High quality curated fallbacks for instant offline resilience
+    const CURATED_ARCHIVE = {
+      "Orion Nebula": {
+        url: "https://images-assets.nasa.gov/image/PIA08006/PIA08006~medium.jpg",
+        title: "Hubble Mosaic of the Orion Nebula (M42)",
+        desc: "Dramatic view of star birth in the Orion Nebula from the Hubble Space Telescope.",
+        mission: "Hubble Space Telescope (HST)",
+        center: "STScI / JPL",
+        date: "2006-01-11"
+      },
+      "Andromeda Galaxy": {
+        url: "https://images-assets.nasa.gov/image/PIA15416/PIA15416~medium.jpg",
+        title: "Andromeda Galaxy (M31) in High Resolution",
+        desc: "High-resolution multi-filter portrait of our galactic neighbor, Andromeda.",
+        mission: "GALEX / Spitzer / Hubble",
+        center: "JPL / Caltech",
+        date: "2012-02-17"
+      },
+      "Pleiades": {
+        url: "https://images-assets.nasa.gov/image/PIA09178/PIA09178~medium.jpg",
+        title: "The Seven Sisters / Pleiades Star Cluster (M45)",
+        desc: "Spitzer and optical composite of the reflection nebulosity in Pleiades.",
+        mission: "Spitzer Space Telescope",
+        center: "JPL",
+        date: "2007-04-18"
+      },
+      "Crab Nebula": {
+        url: "https://images-assets.nasa.gov/image/PIA03606/PIA03606~medium.jpg",
+        title: "Crab Nebula Supernova Remnant (M1)",
+        desc: "Chandra X-Ray and Hubble composite of the historic 1054 CE supernova remnant.",
+        mission: "Hubble & Chandra",
+        center: "STScI / CXC",
+        date: "2002-09-19"
+      },
+      "Pillars of Creation": {
+        url: "https://images-assets.nasa.gov/image/PIA18226/PIA18226~medium.jpg",
+        title: "Pillars of Creation in the Eagle Nebula (M16)",
+        desc: "Legendary Hubble visible and near-infrared view of massive star-forming dust columns.",
+        mission: "Hubble Space Telescope",
+        center: "STScI / ESA",
+        date: "2015-01-05"
+      },
+      "Whirlpool Galaxy": {
+        url: "https://images-assets.nasa.gov/image/PIA03157/PIA03157~medium.jpg",
+        title: "Whirlpool Galaxy (M51) and Companion",
+        desc: "Majestic grand-design spiral galaxy interacting with NGC 5195.",
+        mission: "Hubble Space Telescope",
+        center: "STScI",
+        date: "2005-04-25"
+      },
+      "James Webb Cosmic Cliffs": {
+        url: "https://images-assets.nasa.gov/image/GSFC_20171208_archive_e001435/GSFC_20171208_archive_e001435~medium.jpg",
+        title: "JWST Cosmic Cliffs in the Carina Nebula (NGC 3324)",
+        desc: "James Webb Space Telescope NIRCam observation revealing stellar nurseries previously veiled.",
+        mission: "James Webb Space Telescope (JWST)",
+        center: "GSFC / STScI",
+        date: "2022-07-12"
+      },
+      "Sagittarius A*": {
+        url: "https://images-assets.nasa.gov/image/PIA21590/PIA21590~medium.jpg",
+        title: "Supermassive Black Hole Region Sagittarius A*",
+        desc: "Chandra X-Ray and radio composite of our Milky Way core.",
+        mission: "Chandra / NuSTAR",
+        center: "CXC / JPL",
+        date: "2017-06-07"
+      }
+    };
+
+    // Mode 1: Fetch from NASA Images & Astrophysics API
+    async function fetchDeepSpaceTelescope(query) {
+      if (!query) query = "Orion Nebula";
+      const mission = missionSelect ? missionSelect.value : "";
+      const searchTerms = mission ? `${query} ${mission}` : query;
+
+      showLoading(`Querying NASA Astrophysics archives for "${query}"...`);
+
+      try {
+        const apiUrl = `https://images-api.nasa.gov/search?q=${encodeURIComponent(searchTerms)}&media_type=image`;
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error(`NASA API status: ${res.status}`);
+        const data = await res.json();
+        const items = data.collection && data.collection.items ? data.collection.items : [];
+
+        if (items.length === 0) {
+          if (mission) {
+            const retryRes = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image`);
+            if (retryRes.ok) {
+              const retryData = await retryRes.json();
+              if (retryData.collection && retryData.collection.items && retryData.collection.items.length > 0) {
+                renderNASAItems(retryData.collection.items, query);
+                return;
+              }
+            }
+          }
+          handleFallback(query);
+          return;
+        }
+
+        renderNASAItems(items, query);
+      } catch (err) {
+        console.warn("NASA Images API fetch failed:", err);
+        handleFallback(query);
+      }
+    }
+
+    function renderNASAItems(items, query) {
+      const topItem = items[0];
+      const itemData = (topItem.data && topItem.data[0]) || {};
+      const links = topItem.links || [];
+      const thumbHref = links.find(l => l.rel === "preview" || l.render === "image")?.href || "";
+      const fullImgUrl = thumbHref ? thumbHref.replace("~thumb.jpg", "~medium.jpg") : "";
+
+      updateTelemetry({
+        title: itemData.title || query,
+        desc: itemData.description || `High-resolution observation of ${query}`,
+        mission: missionSelect && missionSelect.value ? missionSelect.value : (itemData.secondary_creator || "NASA Space Telescope / Astrophysics"),
+        center: itemData.center || "NASA STScI / GSFC",
+        date: itemData.date_created ? itemData.date_created.slice(0, 10) : "Archived",
+        fullText: itemData.description || "Calibrated astronomical imaging collected by NASA Space Telescopes."
+      });
+
+      renderImage(fullImgUrl || thumbHref, () => handleFallback(query));
+
+      // Build exposure gallery strip
+      if (gallery && galleryBox) {
+        gallery.innerHTML = "";
+        const exposures = items.slice(0, 7);
+        if (exposures.length > 1) {
+          galleryBox.style.display = "block";
+          exposures.forEach((it, idx) => {
+            const itData = (it.data && it.data[0]) || {};
+            const itThumb = it.links?.find(l => l.rel === "preview")?.href;
+            if (!itThumb) return;
+            const thumbBtn = document.createElement("button");
+            thumbBtn.type = "button";
+            thumbBtn.className = `skyview-gallery-thumb ${idx === 0 ? "active" : ""}`;
+            thumbBtn.title = itData.title || "Telescope Exposure";
+            thumbBtn.innerHTML = `<img src="${itThumb}" alt="${esc(itData.title || "Exposure")}">`;
+            thumbBtn.addEventListener("click", () => {
+              gallery.querySelectorAll(".skyview-gallery-thumb").forEach(b => b.classList.remove("active"));
+              thumbBtn.classList.add("active");
+              const medUrl = itThumb.replace("~thumb.jpg", "~medium.jpg");
+              updateTelemetry({
+                title: itData.title || query,
+                desc: itData.description || "",
+                mission: itData.secondary_creator || "NASA Space Telescope",
+                center: itData.center || "NASA",
+                date: itData.date_created ? itData.date_created.slice(0, 10) : "Archived",
+                fullText: itData.description || ""
+              });
+              renderImage(medUrl || itThumb);
+            });
+            gallery.appendChild(thumbBtn);
+          });
+        } else {
+          galleryBox.style.display = "none";
+        }
+      }
+    }
+
+    function renderImage(url, onFail) {
+      if (!url) {
+        if (onFail) onFail();
+        return;
+      }
+      spinner.style.display = "flex";
+      img.style.display = "none";
+      fallback.style.display = "none";
+
+      const loader = new Image();
+      loader.onload = () => {
+        spinner.style.display = "none";
+        img.src = loader.src;
+        img.style.display = "block";
+        fallback.style.display = "none";
+      };
+      loader.onerror = () => {
+        if (onFail) onFail();
+        else {
+          spinner.style.display = "none";
+          img.style.display = "none";
+          fallback.style.display = "block";
+        }
+      };
+      loader.src = url;
+    }
+
+    function showLoading(msg) {
+      spinner.style.display = "flex";
+      if (spinnerText) spinnerText.textContent = msg || "Querying NASA Astrophysics archives...";
+      img.style.display = "none";
+      fallback.style.display = "none";
+    }
+
+    function updateTelemetry(telem) {
+      if (title) title.textContent = telem.title || "Telescope Observation";
+      if (desc) desc.textContent = telem.desc || "NASA Live Deep-Sky Survey";
+      if (surveyLabel) surveyLabel.textContent = telem.mission || "Hubble / JWST";
+      if (telemId) telemId.textContent = telem.center || "NASA GSFC / JPL";
+      if (telemDate) telemDate.textContent = telem.date || "Live";
+      if (fullDesc) fullDesc.textContent = telem.fullText || "";
+    }
+
+    function handleFallback(targetQuery) {
+      let fallbackTarget = CURATED_ARCHIVE[targetQuery];
+      if (!fallbackTarget) {
+        const keys = Object.keys(CURATED_ARCHIVE);
+        const match = keys.find(k => k.toLowerCase().includes(targetQuery.toLowerCase()) || targetQuery.toLowerCase().includes(k.toLowerCase()));
+        fallbackTarget = match ? CURATED_ARCHIVE[match] : CURATED_ARCHIVE["Orion Nebula"];
+      }
+
+      updateTelemetry({
+        title: fallbackTarget.title,
+        desc: fallbackTarget.desc,
+        mission: fallbackTarget.mission,
+        center: fallbackTarget.center,
+        date: fallbackTarget.date,
+        fullText: fallbackTarget.desc
+      });
+
+      renderImage(fallbackTarget.url);
+    }
+  }
+
+
+  /* ── Celestial Observatory Crest & Armillary Sphere (Authentic Tsukuyomi Animation) ── */
+  function initCelestialCrest() {
+    const canvas = document.getElementById("rive-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let angle = 0;
+    const stars = Array.from({ length: 30 }, () => ({
+      x: (Math.random() - 0.5) * 100,
+      y: (Math.random() - 0.5) * 100,
+      r: Math.random() * 1.6 + 0.6,
+      speed: Math.random() * 0.022 + 0.01,
+      phase: Math.random() * Math.PI * 2
+    }));
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      angle += 0.018;
+
+      // Soft Celestial Aura
+      const grad = ctx.createRadialGradient(cx, cy, 8, cx, cy, 58);
+      grad.addColorStop(0, "rgba(255, 215, 0, 0.3)");
+      grad.addColorStop(0.5, "rgba(139, 0, 0, 0.25)");
+      grad.addColorStop(1, "rgba(10, 10, 10, 0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 58, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Triple Armillary Celestial Rings
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 215, 0, 0.55)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 48, 16, angle, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(201, 80, 107, 0.48)";
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 44, 22, -angle * 0.8, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(184, 134, 11, 0.4)";
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 42, 36, angle * 0.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Glowing Lunar Core
+      const moonGrad = ctx.createRadialGradient(cx - 5, cy - 5, 2, cx, cy, 20);
+      moonGrad.addColorStop(0, "#fff8e0");
+      moonGrad.addColorStop(0.35, "#ffd700");
+      moonGrad.addColorStop(0.75, "#b8860b");
+      moonGrad.addColorStop(1, "#8b0000");
+      ctx.fillStyle = moonGrad;
+      ctx.shadowColor = "#ffd700";
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Orbiting Twinkling Constellation Stars
+      stars.forEach((s) => {
+        const rad = Math.sqrt(s.x * s.x + s.y * s.y);
+        const curA = Math.atan2(s.y, s.x) + s.speed;
+        s.x = Math.cos(curA) * rad;
+        s.y = Math.sin(curA) * rad;
+        const alpha = 0.35 + 0.45 * Math.sin(angle * 2.5 + s.phase);
+        ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(cx + s.x, cy + s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+
+    const container = document.getElementById("rive-container");
+    if (container) {
+      container.addEventListener("click", () => {
+        container.classList.add("pulse");
+        setTimeout(() => container.classList.remove("pulse"), 700);
+      });
+    }
+  }
+
+    /* ── Tsukuyomi Dropdown Navigation Menu ── */
+  function initTsukuyomiDropdown() {
+    const dropdown = document.getElementById("navDropdown");
+    const trigger = document.getElementById("navDropdownTrigger");
+    if (!dropdown || !trigger) return;
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.classList.toggle("open");
+      trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!dropdown.contains(e.target)) {
+        dropdown.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        dropdown.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  /* ── Rive Compatibility Alias ── */
+  function initRive() {
+    initCelestialCrest();
+  }
+
+  /* ── Application Boot ── */
+  function boot() {
+    try { initTsukuyomiDropdown(); } catch (e) { console.error("Dropdown init error:", e); }
+    try { initMap(); } catch (e) { console.error("Map init error:", e); }
+    try { initPetals(); } catch (e) { console.error("Petals init error:", e); }
+    try { initBackgroundStarfield(); } catch (e) { console.error("Starfield init error:", e); }
+    try { initCelestialCrest(); } catch (e) { console.error("Crest init error:", e); }
+    try {
+      skyEngine = createCelestialEngine("star-canvas-container", "sky-canvas");
+    } catch (e) {
+      console.error("Celestial engine init error:", e);
+    }
+    try { initSkyViewController(); } catch (e) { console.error("SkyView controller init error:", e); }
+
+    // Auto-search default celestial spot: Mount Fuji (富士山)
+    try {
+      updateLocation(35.3606, 138.7274, "Mount Fuji, Kitayama, Fujinomiya, Shizuoka Prefecture, Japan");
+    } catch (e) {
+      console.error("Location update error:", e);
+    }
+
+    // Post-entrance layout refresh for canvas and map
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+      if (skyEngine && skyEngine.resize) skyEngine.resize();
+    }, 600);
+
+    // Attempt browser geolocation if user permits
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const name = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+            $q.value = name.split(",").slice(0, 3).join(",");
+            updateLocation(pos.coords.latitude, pos.coords.longitude, name);
+          } catch (e) {
+            console.log("GPS reverse geocode ignored on startup.");
+          }
+        },
+        () => {
+          console.log("GPS denied on boot, showing default Mt. Fuji.");
+        },
+        { timeout: 6000 }
+      );
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+
+</script>
+</body>
+</html>
+

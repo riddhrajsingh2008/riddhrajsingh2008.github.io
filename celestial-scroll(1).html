@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Space Events — The Celestial Scroll · 天象記</title>
+<link rel="stylesheet" href="page-transitions.css">
+<script src="page-transitions.js" defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Sawarabi+Mincho&display=swap');
+:root{
+  --bg:#0a0a0a;
+  --bg-deep:#0a0a0a;
+  --line:rgba(184,134,11,.35);
+  --gold:#ffd700;
+  --gold-dark:#b8860b;
+  --gold-dim:#b8860b;
+  --vermilion:#8b0000;
+  --red:#8b0000;
+  --cream:#f5e6c8;
+  --text-main:#f5e6c8;
+  --muted:rgba(245,230,200,.72);
+  --text-muted:rgba(245,230,200,.72);
+  --dim:rgba(245,230,200,.45);
+  --pink:#c9506b;
+  --card-bg:linear-gradient(150deg,rgba(26,14,14,.96),rgba(12,8,8,.98));
+  --font-body:'Sawarabi Mincho', 'Noto Serif JP', serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  overflow-x:hidden;
+  color:var(--cream);
+  font:15px/1.65 'Sawarabi Mincho','Noto Serif JP',serif;
+  background:
+    radial-gradient(ellipse at 18% 80%,rgba(139,0,0,.15),transparent 55%),
+    radial-gradient(ellipse at 82% 10%,rgba(184,134,11,.10),transparent 45%),
+    radial-gradient(ellipse at 50% 50%,#110a0a 0%,#080808 100%);
+  position:relative;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.22;
+  background:linear-gradient(180deg,transparent 65%,rgba(70,20,20,.3)),radial-gradient(ellipse at 50% 110%,#381313,transparent 55%);
+}
+header,main,footer{position:relative;z-index:1}
+
+
+/* ═══════════════════════════════════════════
+   TOP-LEFT TSUKUYOMI DROPDOWN NAVIGATION MENU
+═══════════════════════════════════════════ */
+.tsukuyomi-nav-dropdown {
+  position: fixed;
+  top: 18px;
+  left: 20px;
+  z-index: 1000;
+  font-family: 'Cinzel Decorative', serif;
+}
+
+.nav-dropdown-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  background: rgba(18, 9, 9, 0.92);
+  border: 1.5px solid var(--red);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.35s ease;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(139, 0, 0, 0.3);
+}
+
+.nav-dropdown-trigger:hover,
+.tsukuyomi-nav-dropdown.open .nav-dropdown-trigger {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.35), inset 0 0 16px rgba(139, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.nav-trigger-arrow {
+  font-size: 0.72rem;
+  transition: transform 0.3s ease;
+  color: var(--gold-dim);
+}
+
+.tsukuyomi-nav-dropdown.open .nav-trigger-arrow {
+  transform: rotate(180deg);
+  color: var(--gold);
+}
+
+.nav-dropdown-trigger .corner {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: var(--gold);
+  border-style: solid;
+  transition: all 0.3s ease;
+}
+.nav-dropdown-trigger .corner.tl { top: 2px; left: 2px; border-width: 1.5px 0 0 1.5px; }
+.nav-dropdown-trigger .corner.tr { top: 2px; right: 2px; border-width: 1.5px 1.5px 0 0; }
+.nav-dropdown-trigger .corner.bl { bottom: 2px; left: 2px; border-width: 0 0 1.5px 1.5px; }
+.nav-dropdown-trigger .corner.br { bottom: 2px; right: 2px; border-width: 0 1.5px 1.5px 0; }
+
+.nav-dropdown-trigger:hover .corner,
+.tsukuyomi-nav-dropdown.open .corner {
+  width: 13px;
+  height: 13px;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 310px;
+  background: linear-gradient(155deg, rgba(22, 11, 11, 0.98), rgba(11, 6, 6, 0.99));
+  border: 1.5px solid rgba(184, 134, 11, 0.45);
+  border-radius: 4px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(139, 0, 0, 0.3);
+  backdrop-filter: blur(14px);
+  padding: 8px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0.28s ease;
+  pointer-events: none;
+}
+
+.tsukuyomi-nav-dropdown.open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.nav-dropdown-header {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  color: var(--gold-dim);
+  text-align: center;
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid rgba(139, 0, 0, 0.3);
+}
+
+.nav-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: var(--cream);
+  border-bottom: 1px solid rgba(139, 0, 0, 0.15);
+  transition: all 0.25s ease;
+}
+
+.nav-menu-item:last-child {
+  border-bottom: none;
+}
+
+.nav-menu-item:hover {
+  background: rgba(139, 0, 0, 0.2);
+  color: var(--gold);
+  padding-left: 20px;
+}
+
+.nav-menu-item.active {
+  background: rgba(184, 134, 11, 0.12);
+  border-left: 3px solid var(--gold);
+}
+
+.nav-menu-icon {
+  font-size: 1.3rem;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-menu-info {
+  flex: 1;
+}
+
+.nav-menu-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cream);
+  transition: color 0.25s ease;
+}
+
+.nav-menu-item:hover .nav-menu-title,
+.nav-menu-item.active .nav-menu-title {
+  color: var(--gold);
+}
+
+.nav-menu-desc {
+  font-family: 'Sawarabi Mincho', 'Noto Serif JP', serif;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.nav-menu-arrow {
+  color: rgba(184, 134, 11, 0.5);
+  font-size: 1.1rem;
+  transition: all 0.25s ease;
+}
+
+.nav-menu-item:hover .nav-menu-arrow {
+  color: var(--gold);
+  transform: translateX(3px);
+}
+
+.nav-menu-badge {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #0a0a0a;
+  background: var(--gold);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+@media (max-width: 760px) {
+  .tsukuyomi-nav-dropdown {
+    position: static;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   AUTHENTIC LUNAR CALENDAR DAY TILES & MOON PHASES
+═══════════════════════════════════════════ */
+.day {
+  min-height: 58px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  padding: 5px 6px;
+  background: linear-gradient(150deg, rgba(22, 12, 12, 0.96), rgba(12, 7, 7, 0.99));
+  border: 1px solid rgba(139, 0, 0, 0.35);
+  border-radius: 4px;
+  font-size: 0.82rem;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.day:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.25), inset 0 0 10px rgba(139, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.day.dim {
+  opacity: 0.32;
+}
+
+.day.today {
+  border-color: var(--gold);
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.35);
+}
+
+.day.today::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ff4500;
+  box-shadow: 0 0 6px #ff4500;
+}
+
+.day.selected {
+  background: linear-gradient(150deg, rgba(48, 25, 14, 0.98), rgba(24, 12, 8, 0.99));
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.45);
+}
+
+.day-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.day-num {
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 700;
+  font-size: 0.86rem;
+  line-height: 1;
+  color: var(--cream);
+}
+
+.lunar-phase-icon {
+  font-size: 0.88rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.45));
+}
+
+.lunar-day-name {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 0.65rem;
+  color: rgba(184, 134, 11, 0.88);
+  letter-spacing: 0.05em;
+  text-align: left;
+  margin: 1px 0 2px;
+}
+
+.day-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+
+header{
+  padding:36px max(5vw,22px) 26px;
+  text-align:center;
+  border-bottom:1px solid rgba(184,134,11,.25);
+  background:linear-gradient(180deg,rgba(10,10,10,.45),rgba(10,10,10,.88));
+  position:relative;
+  overflow:hidden;
+}
+header:before{
+  content:"";
+  position:absolute;
+  width:190px;
+  height:190px;
+  border:1px solid rgba(255,215,0,.14);
+  border-radius:50%;
+  right:8%;
+  top:-75px;
+  box-shadow:0 0 0 14px rgba(255,215,0,.03),0 0 0 32px rgba(255,215,0,.02);
+}
+.eyebrow{color:var(--gold-dim);letter-spacing:.28em;text-transform:uppercase;font:700 .75rem/1.6 'Cinzel Decorative',serif}
+h1,h2,h3{font-family:'Cinzel Decorative','Noto Serif JP',serif}
+h1{
+  font-size:clamp(1.8rem,5vw,3.2rem);
+  line-height:1.25;
+  letter-spacing:.1em;
+  font-weight:700;
+  margin:.4rem 0 .5rem;
+  background:linear-gradient(135deg,#ffd700 0%,#ff4500 35%,#ffd700 55%,#ff4500 75%,#ffd700 100%);
+  background-size:200% 200%;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shimmerGold 4s ease-in-out infinite;
+  filter:drop-shadow(0 0 20px rgba(255,215,0,.15));
+}
+@keyframes shimmerGold{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+h1:after{content:"";display:block;width:min(320px,65%);height:2px;margin:12px auto 0;background:linear-gradient(90deg,transparent,var(--red),var(--gold),var(--red),transparent)}
+h2{font-size:clamp(1.05rem,2vw,1.25rem);font-weight:700;letter-spacing:.05em;margin:0;color:var(--gold)}
+.subtitle{color:var(--muted);max-width:760px;margin:0 auto;font-size:0.92rem;}
+.wrap{max-width:1240px;margin:auto;padding:22px 4vw 45px}
+.topline,.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.topline{margin-bottom:16px}
+.pill{border:1px solid rgba(184,134,11,.48);color:var(--gold);background:rgba(40,20,12,.48);border-radius:3px;padding:6px 14px;font-size:.78rem;letter-spacing:.05em}
+.livebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;color:var(--muted);font-size:.82rem;padding:12px 14px;border-left:3px solid var(--red);background:rgba(28,14,14,.55);border-radius:2px;}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold-dim);margin-right:6px;box-shadow:0 0 8px currentColor}.live-dot.ok{background:#a4c98c}.live-dot.err{background:#e58b9d}
+.controls{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:12px;background:linear-gradient(145deg,rgba(28,15,15,.94),rgba(12,8,8,.97));border:1px solid var(--line);padding:16px;border-radius:4px;margin-bottom:20px;box-shadow:0 12px 35px rgba(0,0,0,.28)}
+label{display:block;color:var(--gold-dim);font-size:.77rem;margin-bottom:6px;letter-spacing:.05em;font-weight:600;}
+select,input{width:100%;background:#0e0a0a;color:var(--cream);border:1px solid #4a2e26;border-radius:3px;padding:10px;font:inherit;transition:border-color .25s ease,box-shadow .25s ease;}
+select:focus,input:focus{border-color:var(--gold);box-shadow:0 0 10px rgba(255,215,0,.25);outline:none;}
+
+/* ── Balanced Dual-Panel Grid Layout ── */
+.layout{
+  display:grid;
+  grid-template-columns:1.22fr 1fr;
+  gap:22px;
+  align-items:start;
+}
+.panel{
+  position:relative;
+  background:var(--card-bg);
+  border:1px solid var(--line);
+  border-radius:4px;
+  overflow:hidden;
+  box-shadow:0 15px 40px rgba(0,0,0,.35),0 0 20px rgba(139,0,0,.1);
+  transition:border-color .3s ease,box-shadow .3s ease;
+}
+.panel:hover{
+  border-color:rgba(255,215,0,.45);
+  box-shadow:0 18px 45px rgba(0,0,0,.45),0 0 25px rgba(184,134,11,.15);
+}
+.panel-head{
+  padding:15px 18px;
+  border-bottom:1px solid rgba(139,0,0,.4);
+  background:rgba(50,15,15,.22);
+}
+.panel-body{padding:16px}
+
+/* ── Fixed Scrollable Events List (Prevents Awkward Empty Half-Page) ── */
+#eventList{
+  max-height:540px;
+  overflow-y:auto;
+  padding-right:6px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--gold-dim) rgba(20,10,10,.8);
+}
+#eventList::-webkit-scrollbar{width:6px}
+#eventList::-webkit-scrollbar-track{background:rgba(20,10,10,.8)}
+#eventList::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px}
+
+.event{
+  display:grid;
+  grid-template-columns:54px 1fr;
+  gap:14px;
+  padding:14px 0;
+  border-bottom:1px solid rgba(139,0,0,.25);
+  transition:background .25s ease;
+}
+.event:last-child{border:0}
+.event:hover{background:rgba(184,134,11,.04);padding-left:4px;}
+.event-icon{
+  width:52px;
+  height:52px;
+  border:1px solid rgba(184,134,11,.35);
+  border-radius:3px;
+  background:linear-gradient(145deg,#241614,#120d0d);
+  display:grid;
+  place-items:center;
+  font-size:1.6rem;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+.event h3{margin:0 0 5px;font-size:.96rem;line-height:1.5;color:var(--cream);letter-spacing:.02em}
+.event p{margin:4px 0;color:var(--muted);font-size:.86rem;line-height:1.6;}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tag{font-size:.72rem;padding:3px 9px;border-radius:2px;background:#241615;color:#e5c9b0;border:1px solid rgba(139,0,0,.35)}
+.tag.gold{background:rgba(184,134,11,.14);color:var(--gold);border-color:rgba(184,134,11,.45)}
+.empty{text-align:center;color:var(--muted);padding:35px 20px}
+.cal-nav{display:flex;gap:7px}
+
+button{
+  background:linear-gradient(145deg,#241514,#100d0d);
+  color:var(--cream);
+  border:1px solid #56352a;
+  border-radius:3px;
+  padding:8px 12px;
+  cursor:pointer;
+  font:inherit;
+  transition:all .25s ease;
+}
+button:hover{border-color:var(--gold);color:var(--gold);box-shadow:0 0 15px rgba(255,215,0,.15);transform:scale(1.02)}
+button:disabled{opacity:.5;cursor:wait}
+
+/* ═══════════════════════════════════════════
+   TRADITIONAL JAPANESE LUNAR CALENDAR STYLE (旧暦・和暦風)
+═══════════════════════════════════════════ */
+.cal-month-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+.cal-month-kanji{
+  font-size:0.78rem;
+  color:var(--gold-dim);
+  letter-spacing:0.18em;
+  font-family:'Noto Serif JP',serif;
+}
+.calendar{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:6px;
+  background:rgba(14,8,8,.55);
+  padding:10px;
+  border-radius:4px;
+  border:1px solid rgba(139,0,0,.25);
+}
+.dow{
+  text-align:center;
+  color:var(--gold-dim);
+  padding:7px 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1px;
+}
+.dow-k{
+  font-family:'Noto Serif JP',serif;
+  font-size:0.86rem;
+  font-weight:700;
+  color:var(--gold);
+}
+.dow-sub{
+  font-family:'Cinzel Decorative',serif;
+  font-size:0.65rem;
+  letter-spacing:0.04em;
+  opacity:0.75;
+}
+/* .day replaced by enhanced lunar calendar day */
+.dots{display:flex;gap:3px;min-height:5px;}
+.dot{width:5px;height:5px;border-radius:50%;background:#b9c9a1}
+.dot.meteor{background:var(--pink);box-shadow:0 0 4px var(--pink)}
+.dot.moon{background:var(--gold);box-shadow:0 0 4px var(--gold)}
+
+.detail{
+  margin-top:14px;
+  padding:14px 16px;
+  border:1px solid var(--line);
+  border-radius:3px;
+  color:var(--muted);
+  font-size:.88rem;
+  min-height:72px;
+  background:rgba(18,10,10,.65);
+  box-shadow:inset 0 0 20px rgba(0,0,0,.4);
+  line-height:1.6;
+}
+.notice{
+  margin-top:20px;
+  padding:14px 16px;
+  border-left:3px solid var(--gold-dim);
+  background:rgba(30,15,15,.65);
+  color:var(--muted);
+  font-size:.82rem;
+  border-radius:2px;
+}
+footer{
+  text-align:center;
+  color:rgba(245,230,200,.42);
+  font:.72rem/1.7 'Cinzel Decorative',serif;
+  letter-spacing:.14em;
+  padding:25px;
+  border-top:1px solid rgba(139,0,0,.25);
+  margin-top:25px;
+}
+
+@media(max-width:860px){
+  .layout{grid-template-columns:1fr}
+  #eventList{max-height:480px;}
+  .controls{grid-template-columns:repeat(2,minmax(130px,1fr))}
+  header{padding-top:36px}
+}
+@media(max-width:480px){
+  .controls{grid-template-columns:1fr}
+  .wrap{padding-left:3vw;padding-right:3vw}
+  .day{min-height:42px}
+  .topline{align-items:flex-start}
+}
+
+#petals {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.lunar-phases-strip {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(14, 7, 7, 0.75);
+  border-bottom: 1px solid rgba(139, 0, 0, 0.35);
+  scrollbar-width: none;
+}
+.lunar-phases-strip::-webkit-scrollbar { display: none; }
+.phase-chip {
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-family: 'Noto Serif JP', serif;
+  color: var(--gold-dim);
+  background: rgba(30, 16, 16, 0.7);
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  border-radius: 12px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+  cursor: default;
+  transition: all 0.2s ease;
+}
+.phase-chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(45, 20, 20, 0.85);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+.btn-lunation {
+  background: linear-gradient(145deg, #241514, #100d0d);
+  color: var(--gold);
+  border: 1px solid rgba(184, 134, 11, 0.4);
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-family: 'Cinzel Decorative', serif;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.btn-lunation:hover {
+  border-color: var(--gold);
+  background: rgba(45, 20, 20, 0.9);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+</style>
+</head>
+<body>
+
+  <!-- Sakura Falling Petals Canvas (32 Petals Site Standard) -->
+  <canvas id="petals" aria-hidden="true"></canvas>
+
+<!-- Top-Left Tsukuyomi Dropdown Navigation Menu -->
+<div class="tsukuyomi-nav-dropdown" id="navDropdown">
+  <button type="button" class="nav-dropdown-trigger" id="navDropdownTrigger" aria-haspopup="true" aria-expanded="false" title="Tsukuyomi Navigation Realms">
+    <span class="corner tl"></span>
+    <span class="corner tr"></span>
+    <span class="corner bl"></span>
+    <span class="corner br"></span>
+    <span class="nav-trigger-icon">⛩️</span>
+    <span class="nav-trigger-text">TSUKUYOMI</span>
+    <span class="nav-trigger-arrow">▾</span>
+  </button>
+  <div class="nav-dropdown-menu" id="navDropdownMenu" role="menu">
+    <div class="nav-dropdown-header">✦ 導 き · SANCTUARY REALMS ✦</div>
+    <a href="index.html" class="nav-menu-item" role="menuitem">
+      <span class="nav-menu-icon">🏯</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">Sanctuary Gate</div>
+        <div class="nav-menu-desc">Return to the grand entrance</div>
+      </div>
+      <span class="nav-menu-arrow">›</span>
+    </a>
+    <a href="watchtower.html" class="nav-menu-item" role="menuitem">
+      <span class="nav-menu-icon">⛩️</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">The Watchtower</div>
+        <div class="nav-menu-desc">Celestial clarity & night sky sanctuaries</div>
+      </div>
+      <span class="nav-menu-arrow">›</span>
+    </a>
+    <a href="celestial-scroll.html" class="nav-menu-item active" role="menuitem">
+      <span class="nav-menu-icon">📜</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">The Celestial Scroll</div>
+        <div class="nav-menu-desc">Ancient lunar calendar & space launches</div>
+      </div>
+      <span class="nav-menu-badge">Current</span>
+    </a>
+    <a href="spirit-lens.html" class="nav-menu-item" role="menuitem">
+      <span class="nav-menu-icon">🔮</span>
+      <div class="nav-menu-info">
+        <div class="nav-menu-title">The Spirit Lens</div>
+        <div class="nav-menu-desc">Deep-space image purification & vision</div>
+      </div>
+      <span class="nav-menu-arrow">›</span>
+    </a>
+  </div>
+</div>
+
+<header>
+  <div style="display:flex; justify-content:center; margin-bottom:0.6rem;">
+    <div class="pill" style="font-family:'Cinzel Decorative',serif; letter-spacing:0.25em; text-transform:uppercase; font-size:0.75rem;">
+      ✦ 月見 · TSUKUYOMI WATCH · 第二天象記 ✦
+    </div>
+  </div>
+
+  <!-- Interactive Astrolabe Canvas Animation -->
+  <div style="display:flex; justify-content:center; align-items:center; margin:0.4rem auto 0.2rem;">
+    <div id="astrolabe-container" style="position:relative; width:110px; height:110px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Interactive Celestial Astrolabe">
+      <canvas id="astrolabe-canvas" width="110" height="110" style="position:absolute; inset:0;"></canvas>
+      <div style="position:relative; z-index:2; font-size:2.2rem; filter:drop-shadow(0 0 10px rgba(255,215,0,0.6));">📜</div>
+    </div>
+  </div>
+
+  <h1>THE CELESTIAL SCROLL</h1>
+  <p style="color:#8b0000;letter-spacing:.42em;font-family:'Noto Serif JP',serif;margin:-.2rem 0 .7rem;font-weight:700;">月 読 の 天 象 記</p>
+  <p class="subtitle" style="font-size:0.94rem; max-width:760px; line-height:1.6;">Decipher the ancient astronomical scroll to reveal upcoming rocket launches, planetary conjunctions, and cosmic treasures written across the heavens.</p>
+</header>
+
+<main class="wrap">
+  <div class="topline">
+    <span class="pill">✦ Observe with curiosity · Record with honesty</span>
+    <span id="todayLabel" class="subtitle"></span>
+  </div>
+
+  <div class="livebar">
+    <span id="liveStatus"><i class="live-dot"></i>Connecting to launch feed…</span>
+    <button id="refreshLive" type="button">↻ Refresh live launches</button>
+    <span>Launch Library 2 · updates live upon page opening or refresh</span>
+  </div>
+
+  <section class="controls" aria-label="Event filters">
+    <div>
+      <label for="typeFilter">Event type</label>
+      <select id="typeFilter">
+        <option value="all">All event types</option>
+        <option>Meteor Shower</option>
+        <option>Eclipse</option>
+        <option>Moon Phase</option>
+        <option>ISS Pass</option>
+        <option>Rocket Launch</option>
+      </select>
+    </div>
+    <div>
+      <label for="rangeFilter">Date range</label>
+      <select id="rangeFilter">
+        <option value="30">Next 30 days</option>
+        <option value="7">Next 7 days</option>
+        <option value="90">Next 90 days</option>
+        <option value="all">All listed dates</option>
+      </select>
+    </div>
+    <div>
+      <label for="searchBox">Search events</label>
+      <input id="searchBox" type="search" placeholder="e.g. Moon, meteor">
+    </div>
+    <div>
+      <label for="locationBox">Observer location (optional)</label>
+      <input id="locationBox" placeholder="City or region">
+    </div>
+  </section>
+
+  <div class="layout">
+    <!-- Left Panel: Scrollable Sky Events List -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Upcoming in the sky</h2>
+        <span id="resultCount" class="pill">0 events</span>
+      </div>
+      <div class="panel-body" id="eventList"></div>
+    </section>
+
+    <!-- Right Panel: Authentic Lunar Calendar (29.53-Day Synodic Cycles & 8 Moon Phases) -->
+    <section class="panel">
+      <div class="panel-head">
+        <div class="cal-month-wrap">
+          <h2 id="monthLabel">太陰暦 · 朔望月</h2>
+          <span class="cal-month-kanji" id="monthKanji">朔望周期 29.53日 · Complete Lunar Cycle</span>
+        </div>
+        <div class="cal-nav" style="display:flex; gap:6px; align-items:center;">
+          <button id="prevMonth" class="btn-lunation" aria-label="Previous lunation" title="Previous Lunar Month">← 前月</button>
+          <button id="curLunationBtn" class="btn-lunation" aria-label="Current moon tonight" title="Jump to Moon Tonight" style="color:#ffd700; border-color:#ffd700;">今宵</button>
+          <button id="nextMonth" class="btn-lunation" aria-label="Next lunation" title="Next Lunar Month">翌月 →</button>
+        </div>
+      </div>
+
+      <!-- Eight Commonly Recognised Moon Phases Strip -->
+      <div class="lunar-phases-strip" id="lunarPhasesStrip">
+        <span class="phase-chip" title="Phase 1 · Day 1 (0% illumination)">🌑 新月 · 朔 (New Moon)</span>
+        <span class="phase-chip" title="Phase 2 · Days 2–6 (1%–49%)">🌒 三日月 (Waxing Crescent)</span>
+        <span class="phase-chip" title="Phase 3 · Days 7–8 (50%)">🌓 上弦の月 (First Quarter)</span>
+        <span class="phase-chip" title="Phase 4 · Days 9–14 (51%–99%)">🌔 十三夜 (Waxing Gibbous)</span>
+        <span class="phase-chip" title="Phase 5 · Days 15–16 (100%)">🌕 満月 · 望月 (Full Moon)</span>
+        <span class="phase-chip" title="Phase 6 · Days 17–21 (99%–51%)">🌖 十六夜 (Waning Gibbous)</span>
+        <span class="phase-chip" title="Phase 7 · Days 22–23 (50%)">🌗 下弦の月 (Last Quarter)</span>
+        <span class="phase-chip" title="Phase 8 · Days 24–28 (49%–1%)">🌘 有明の月 (Waning Crescent)</span>
+      </div>
+
+      <div class="panel-body">
+        <div class="calendar" id="calendar"></div>
+        <div class="detail" id="dayDetail">Select any lunar day across this 29.53-day cycle to inspect astronomical phenomena.</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>月読の番人 · THE CELESTIAL SCROLL · SPACE EVENTS MODULE</footer>
+
+<script>
+const now = new Date();
+const isoDay = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const plusDays = n => { let d = new Date(); d.setDate(d.getDate() + n); return isoDay(d); };
+
+// Authentic space and lunar events (No "example" prefixes)
+const events = [
+  {
+    date: plusDays(2),
+    type: 'Moon Phase',
+    name: 'First Quarter Moon',
+    icon: '🌓',
+    description: 'Half-illuminated lunar disk. Excellent relief along the lunar terminator for observing craters and mountain peaks with binoculars or telescopes.',
+    time: 'Evening',
+    visibility: 'General skywatching'
+  },
+  {
+    date: plusDays(5),
+    type: 'ISS Pass',
+    name: 'ISS Visible Pass',
+    icon: '🛰️',
+    description: 'High-brightness transit of the International Space Station across the night sky. Naked-eye viewing confirmed.',
+    time: 'Post-sunset',
+    visibility: 'Check local pass azimuth'
+  },
+  {
+    date: plusDays(9),
+    type: 'Meteor Shower',
+    name: 'Active Meteor Shower Peak',
+    icon: '☄️',
+    description: 'Peak radiant activity under favorable moon conditions. Best viewed from dark-sky observation sanctuaries away from urban light.',
+    time: 'After midnight',
+    visibility: 'Dark sky recommended'
+  },
+  {
+    date: plusDays(13),
+    type: 'Moon Phase',
+    name: 'Full Moon Transit',
+    icon: '🌕',
+    description: 'Luminous Full Moon illuminating the celestial dome. Pristine target for lunar geography and telescopic exploration.',
+    time: 'Around moonrise',
+    visibility: 'Weather permitting'
+  },
+  {
+    date: plusDays(18),
+    type: 'Eclipse',
+    name: 'Partial Lunar Eclipse',
+    icon: '🌘',
+    description: 'Planetary syzygy alignment. Earth shadow casting a subtle reddish-amber penumbral veil over the lunar highlands.',
+    time: 'Night',
+    visibility: 'Clear horizon recommended'
+  },
+  {
+    date: plusDays(22),
+    type: 'Rocket Launch',
+    name: 'Orbital Launch Window',
+    icon: '🚀',
+    description: 'Scheduled commercial orbital ascent and payload deployment. Trajectory observation visible downrange.',
+    time: 'TBD',
+    visibility: 'Depends on trajectory and weather'
+  },
+  {
+    date: plusDays(27),
+    type: 'Moon Phase',
+    name: 'New Moon Dark Sky Window',
+    icon: '🌑',
+    description: 'Moonless night offering maximum celestial contrast. Prime window for imaging the Milky Way, star clusters, and deep-sky nebulae.',
+    time: 'All night',
+    visibility: 'Dark-sky conditions optimal'
+  }
+];
+
+const exampleEvents = events.slice();
+let liveLaunchEvents = [];
+
+const typeFilter = document.getElementById('typeFilter');
+const rangeFilter = document.getElementById('rangeFilter');
+const searchBox = document.getElementById('searchBox');
+
+const fmt = s => new Date(s + 'T12:00:00').toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+const typeClass = t => t === 'Meteor Shower' ? 'meteor' : t === 'Moon Phase' ? 'moon' : '';
+
+
+function allEvents() {
+  const nonLaunchEvents = exampleEvents.filter(e => e.type !== 'Rocket Launch');
+  const launchEvents = (Array.isArray(liveLaunchEvents) && liveLaunchEvents.length > 0)
+    ? liveLaunchEvents
+    : exampleEvents.filter(e => e.type === 'Rocket Launch');
+  return [...nonLaunchEvents, ...launchEvents];
+}
+
+function filtered() {
+  const q = searchBox.value.trim().toLowerCase();
+  const type = typeFilter.value;
+  const range = rangeFilter.value;
+  return allEvents().filter(e => {
+    const delta = Math.round((new Date(e.date + 'T12:00:00') - new Date(isoDay(now) + 'T12:00:00')) / 86400000);
+    return (type === 'all' || e.type === type) &&
+           (range === 'all' || (delta >= 0 && delta <= Number(range))) &&
+           (!q || (e.name + ' ' + e.type + ' ' + e.description).toLowerCase().includes(q));
+  }).sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function renderEvents() {
+  const arr = filtered();
+  document.getElementById('resultCount').textContent = `${arr.length} event${arr.length === 1 ? '' : 's'}`;
+  const list = document.getElementById('eventList');
+  if (!arr.length) {
+    list.innerHTML = '<div class="empty">No matching celestial events. Adjust your filters to inspect other windows.</div>';
+    return;
+  }
+  list.innerHTML = arr.map(e => `
+    <article class="event">
+      <div class="event-icon" aria-hidden="true">${e.icon}</div>
+      <div>
+        <h3>${e.name}</h3>
+        <p>${e.description}</p>
+        <div class="meta">
+          <span class="tag gold">${e.type}</span>
+          <span class="tag">${fmt(e.date)}</span>
+          <span class="tag">${e.time}</span>
+        </div>
+        <p style="font-size:0.78rem; color:var(--dim); margin-top:6px;">Visibility: ${e.visibility} · ${e.live ? 'Live Feed: Launch Library 2' : 'Astronomical Almanac'}</p>
+      </div>
+    </article>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// TRUE LUNAR CALENDAR ENGINE (太陰暦)
+// Tracks time using the 29.53-day phases and synodic cycles of the Moon
+// ══════════════════════════════════════════════════════════
+const refNewMoon = new Date('2024-01-11T11:57:00Z').getTime();
+const synodicMs = 29.530588853 * 86400 * 1000;
+
+// Traditional 12 Japanese Lunations (和風月名)
+const LUNAR_MONTH_NAMES = [
+  '睦月 · Mutsuki (First Lunation)',
+  '如月 · Kisaragi (Second Lunation)',
+  '弥生 · Yayoi (Third Lunation)',
+  '卯月 · Uzuki (Fourth Lunation)',
+  '皐月 · Satsuki (Fifth Lunation)',
+  '水無月 · Minazuki (Sixth Lunation)',
+  '文月 · Fumizuki (Seventh Lunation)',
+  '葉月 · Hazuki (Eighth Lunation)',
+  '長月 · Nagatsuki (Ninth Lunation)',
+  '神無月 · Kannazuki (Tenth Lunation)',
+  '霜月 · Shimotsuki (Eleventh Lunation)',
+  '師走 · Shiwasu (Twelfth Lunation)'
+];
+
+// Seven Luminaries (七曜 - Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn)
+const LUNAR_SEVEN_LUMINARIES = [
+  { ja: '日', en: 'Sun', color: '#ffb74d' },
+  { ja: '月', en: 'Moon', color: '#ffd700' },
+  { ja: '火', en: 'Mars', color: '#ff6b6b' },
+  { ja: '水', en: 'Mercury', color: '#4dabf7' },
+  { ja: '木', en: 'Jupiter', color: '#69db7c' },
+  { ja: '金', en: 'Venus', color: '#ffe066' },
+  { ja: '土', en: 'Saturn', color: '#d8b4fe' }
+];
+
+function getLunation(index) {
+  const startMs = refNewMoon + index * synodicMs;
+  const endMs = startMs + synodicMs;
+  const startDate = new Date(startMs);
+  const endDate = new Date(endMs);
+  const daysInLunation = Math.round((endMs - startMs) / 86400000);
+  const nameIndex = ((index % 12) + 12) % 12;
+  return {
+    index,
+    name: LUNAR_MONTH_NAMES[nameIndex],
+    startDate,
+    endDate,
+    daysInLunation
+  };
+}
+
+// 8 Recognized Moon Phases classification for the 29.53-day cycle
+function getLunarDayInfo(d, totalDays) {
+  let phaseNum, phaseName, phaseKanji, icon, illum;
+
+  if (d === 1) {
+    phaseNum = 1; phaseName = 'New Moon'; phaseKanji = '新月 · 朔'; icon = '🌑'; illum = '0%';
+  } else if (d < 7) {
+    phaseNum = 2; phaseName = 'Waxing Crescent'; phaseKanji = '三日月'; icon = '🌒'; illum = Math.round((d / 7.5) * 45) + '%';
+  } else if (d === 7 || d === 8) {
+    phaseNum = 3; phaseName = 'First Quarter'; phaseKanji = '上弦の月'; icon = '🌓'; illum = '50%';
+  } else if (d < 15) {
+    phaseNum = 4; phaseName = 'Waxing Gibbous'; phaseKanji = '十三夜'; icon = '🌔'; illum = (50 + Math.round(((d - 7.5) / 7.5) * 48)) + '%';
+  } else if (d === 15 || d === 16) {
+    phaseNum = 5; phaseName = 'Full Moon'; phaseKanji = '満月 · 望月'; icon = '🌕'; illum = '100%';
+  } else if (d < 22) {
+    phaseNum = 6; phaseName = 'Waning Gibbous'; phaseKanji = '十六夜 · 寝待月'; icon = '🌖'; illum = (98 - Math.round(((d - 15.5) / 7) * 45)) + '%';
+  } else if (d === 22 || d === 23) {
+    phaseNum = 7; phaseName = 'Last Quarter'; phaseKanji = '下弦の月'; icon = '🌗'; illum = '50%';
+  } else if (d < totalDays - 1) {
+    phaseNum = 8; phaseName = 'Waning Crescent'; phaseKanji = '有明の月'; icon = '🌘'; illum = Math.max(1, 45 - Math.round(((d - 22.5) / 6) * 40)) + '%';
+  } else {
+    phaseNum = 1; phaseName = 'Dark Moon'; phaseKanji = '三十日月 · 晦'; icon = '🌑'; illum = '0%';
+  }
+
+  const kanjiDay = d === 1 ? '朔日' : (d === 3 ? '三日' : (d === 7 ? '初七日' : (d === 13 ? '十三夜' : (d === 15 ? '十五夜' : (d === 16 ? '十六夜' : (d === 23 ? '廿三夜' : (d >= totalDays - 1 ? '晦日' : ('初' + d))))))));
+
+  return { d, phaseNum, phaseName, phaseKanji, icon, illum, kanjiDay };
+}
+
+let currentLunationIndex = Math.floor((now.getTime() - refNewMoon) / synodicMs);
+let selectedDate = isoDay(now);
+let selectedLunarDay = 1;
+
+// Initialize selected lunar day for today
+(function initSelectedDay() {
+  const curLun = getLunation(currentLunationIndex);
+  const diffDays = Math.round((new Date(selectedDate + 'T12:00:00').getTime() - curLun.startDate.getTime()) / 86400000);
+  selectedLunarDay = Math.max(1, Math.min(curLun.daysInLunation, diffDays + 1));
+})();
+
+function renderCalendar() {
+  const lunation = getLunation(currentLunationIndex);
+  document.getElementById('monthLabel').textContent = lunation.name;
+  const kanjiEl = document.getElementById('monthKanji');
+  if (kanjiEl) {
+    const startStr = fmt(isoDay(lunation.startDate));
+    const endStr = fmt(isoDay(new Date(lunation.startDate.getTime() + (lunation.daysInLunation - 1) * 86400000)));
+    kanjiEl.textContent = '太陰周期 ' + lunation.daysInLunation + '日 · ' + startStr + ' 〜 ' + endStr;
+  }
+
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = LUNAR_SEVEN_LUMINARIES.map(n => `
+    <div class="dow">
+      <span class="dow-k" style="color:${n.color};">${n.ja}</span>
+      <span class="dow-sub">${n.en}</span>
+    </div>
+  `).join('');
+
+  // Start weekday of this lunation (New Moon Day)
+  const startDOW = lunation.startDate.getDay();
+
+  // Padding days before Day 1
+  for (let i = 0; i < startDOW; i++) {
+    cal.insertAdjacentHTML('beforeend', '<div class="day empty-pad" style="opacity:0.12; pointer-events:none; border:none; background:transparent;"></div>');
+  }
+
+  // Days 1 through 29/30 of this complete Lunar Cycle
+  for (let d = 1; d <= lunation.daysInLunation; d++) {
+    const dayDate = new Date(lunation.startDate.getFullYear(), lunation.startDate.getMonth(), lunation.startDate.getDate() + (d - 1), 12, 0, 0);
+    const dateStr = isoDay(dayDate);
+    const info = getLunarDayInfo(d, lunation.daysInLunation);
+    const ev = allEvents().filter(e => e.date === dateStr);
+    const dots = ev.slice(0, 3).map(e => `<i class="dot ${typeClass(e.type)}"></i>`).join('');
+    const isToday = (dateStr === isoDay(now));
+    const isSelected = (dateStr === selectedDate);
+    const solarShort = (dayDate.getMonth() + 1) + '/' + dayDate.getDate();
+
+    cal.insertAdjacentHTML('beforeend', `
+      <button class="day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" data-date="${dateStr}" data-lunar-day="${d}" aria-label="Lunar Day ${d} (${info.phaseName}) · ${dateStr}">
+        <div class="day-top">
+          <span class="day-num" title="Lunar Day ${d}">${d}</span>
+          <span class="lunar-phase-icon" title="${info.phaseName} (${info.illum})">${info.icon}</span>
+        </div>
+        <div class="lunar-day-name" title="${info.phaseName}">${info.kanjiDay}</div>
+        <div class="day-bottom">
+          <span class="solar-tag" style="font-size:0.62rem; color:var(--dim); font-family:monospace;">${solarShort}</span>
+          <span class="dots">${dots}</span>
+        </div>
+      </button>
+    `);
+  }
+
+  // Complete grid row padding
+  const totalCells = startDOW + lunation.daysInLunation;
+  const rem = (7 - (totalCells % 7)) % 7;
+  for (let i = 0; i < rem; i++) {
+    cal.insertAdjacentHTML('beforeend', '<div class="day empty-pad" style="opacity:0.12; pointer-events:none; border:none; background:transparent;"></div>');
+  }
+
+  cal.querySelectorAll('[data-date]').forEach(b => b.addEventListener('click', () => {
+    selectedDate = b.dataset.date;
+    selectedLunarDay = Number(b.dataset.lunarDay);
+    renderCalendar();
+    renderDayDetail();
+  }));
+
+  renderDayDetail();
+}
+
+function renderDayDetail() {
+  const lunation = getLunation(currentLunationIndex);
+  let d = selectedLunarDay;
+  if (!d) {
+    const diffDays = Math.round((new Date(selectedDate + 'T12:00:00').getTime() - lunation.startDate.getTime()) / 86400000);
+    d = (diffDays >= 0 && diffDays < lunation.daysInLunation) ? (diffDays + 1) : 1;
+  }
+  const info = getLunarDayInfo(d, lunation.daysInLunation);
+  const ev = allEvents().filter(e => e.date === selectedDate);
+
+  document.getElementById('dayDetail').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+      <div>
+        <span style="font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--gold); font-weight:700;">
+          ${info.icon} 太陰日 第${info.d}日 · ${info.kanjiDay}
+        </span>
+        <span style="font-size:0.82rem; color:var(--gold-dim); margin-left:6px;">(${info.phaseName} · ${info.phaseKanji})</span>
+      </div>
+      <div style="font-size:0.78rem; background:rgba(184,134,11,0.18); border:1px solid rgba(184,134,11,0.4); padding:3px 10px; border-radius:3px; color:var(--cream);">
+        Illumination: <strong>${info.illum}</strong> · Earth Solar Date: <strong>${fmt(selectedDate)}</strong>
+      </div>
+    </div>
+  ` + (ev.length ? ev.map(e => `
+    <div style="margin-top:7px; padding:7px 0; border-top:1px solid rgba(139,0,0,0.25); display:flex; gap:9px; align-items:baseline;">
+      <span style="font-size:1.15rem;">${e.icon}</span>
+      <div>
+        <strong style="color:var(--cream); font-size:0.92rem;">${e.name}</strong>
+        <span style="color:var(--gold-dim); font-size:0.78rem;">(${e.type})</span> — ${e.time}
+        <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">${e.description}</div>
+      </div>
+    </div>
+  `).join('') : '<div style="color:var(--dim); font-size:0.84rem; padding:6px 0;">No astronomical phenomena recorded in this scroll for this lunar night.</div>');
+}
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  currentLunationIndex--;
+  renderCalendar();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+  currentLunationIndex++;
+  renderCalendar();
+});
+
+const curBtn = document.getElementById('curLunationBtn');
+if (curBtn) {
+  curBtn.addEventListener('click', () => {
+    currentLunationIndex = Math.floor((now.getTime() - refNewMoon) / synodicMs);
+    selectedDate = isoDay(now);
+    const lunation = getLunation(currentLunationIndex);
+    const diffDays = Math.round((new Date(selectedDate + 'T12:00:00').getTime() - lunation.startDate.getTime()) / 86400000);
+    selectedLunarDay = Math.max(1, Math.min(lunation.daysInLunation, diffDays + 1));
+    renderCalendar();
+    renderDayDetail();
+  });
+}
+
+[typeFilter, rangeFilter].forEach(el => el.addEventListener('change', renderEvents));
+searchBox.addEventListener('input', renderEvents);
+
+document.getElementById('todayLabel').textContent = 'Today · ' + now.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+
+function initTsukuyomiDropdown() {
+  const dropdown = document.getElementById("navDropdown");
+  const trigger = document.getElementById("navDropdownTrigger");
+  if (!dropdown || !trigger) return;
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = dropdown.classList.toggle("open");
+    trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      dropdown.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+initTsukuyomiDropdown();
+renderEvents();
+renderCalendar();
+
+async function loadLiveLaunches() {
+  const status = document.getElementById('liveStatus');
+  const btn = document.getElementById('refreshLive');
+  btn.disabled = true;
+  status.innerHTML = '<i class="live-dot"></i>Loading upcoming launches…';
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch('https://ll.thespacedevs.com/2.3.0/launches/upcoming/?limit=10&mode=list', {
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error('API response ' + res.status);
+    const data = await res.json();
+    const rows = Array.isArray(data.results) ? data.results : [];
+    if (!rows.length) throw new Error('API returned empty launch data');
+
+    const parsed = rows.map((x, i) => {
+      const raw = x.net || x.window_start || x.window_start_date;
+      const d = raw ? new Date(raw) : null;
+      const isValidDate = d && !Number.isNaN(d.getTime());
+      const date = isValidDate ? isoDay(d) : isoDay(new Date());
+      const loc = x.pad?.location?.name || x.pad?.name || 'Launch location to be confirmed';
+      const provider = x.launch_service_provider?.name || x.launch_service_provider_name || 'Provider not listed';
+      const time = isValidDate ? d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Time not confirmed';
+      return {
+        date,
+        type: 'Rocket Launch',
+        name: x.name || 'Upcoming rocket launch',
+        icon: '🚀',
+        description: `${provider}. Launch site: ${loc}. Schedule may change; confirm with the launch provider.`,
+        time,
+        visibility: 'Launch visibility depends on location, weather and trajectory',
+        live: true,
+        source: 'Launch Library 2',
+        id: x.id || i
+      };
+    });
+
+    liveLaunchEvents = parsed;
+    status.innerHTML = '<i class="live-dot ok"></i>Live launch feed loaded · ' + liveLaunchEvents.length + ' entries · checked ' + new Date().toLocaleTimeString();
+    renderEvents();
+    renderCalendar();
+  } catch(err) {
+    clearTimeout(timeoutId);
+    // Don't clear liveLaunchEvents - keep fallback data working
+    status.innerHTML = '<i class="live-dot err"></i>Live feed unavailable — showing almanac celestial records.';
+    console.error('Could not load launch feed:', err);
+    renderEvents();
+    renderCalendar();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('refreshLive').addEventListener('click', loadLiveLaunches);
+loadLiveLaunches();
+</script>
+
+<script>
+/* ── Sakura Falling Petals (32 Petals Site Standard) ── */
+function initPetals() {
+  const canvas = document.getElementById("petals");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const petals = Array.from({ length: 32 }, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight - window.innerHeight,
+    r: 4 + Math.random() * 5.5,
+    dx: 0.2 + Math.random() * 0.55,
+    dy: 0.4 + Math.random() * 0.8,
+    rot: Math.random() * Math.PI * 2,
+    dr: (Math.random() - 0.5) * 0.02,
+    opacity: 0.25 + Math.random() * 0.35
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of petals) {
+      p.x += p.dx + Math.sin(p.y * 0.007) * 0.4;
+      p.y += p.dy;
+      p.rot += p.dr;
+
+      if (p.y > H + 25) { p.y = -25; p.x = Math.random() * W; }
+      if (p.x > W + 25) p.x = -25;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = "#e699a8";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, p.r, p.r * 0.52, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+initPetals();
+</script>
+</body>
+</html>

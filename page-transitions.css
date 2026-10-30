@@ -1,0 +1,437 @@
+/* ═══════════════════════════════════════════════════════════════
+   TSUKUYOMI WATCH — COMPONENT KINETIC PAGE TRANSITIONS
+   Physics-driven page transitions:
+   - Components collide / push against each other and out of the webpage
+   - New page components arrive to take their place
+   - Clean ink/dark aesthetic with NO yellow explosion or middle flash
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Prevent horizontal overflow scrollbars while components fly off-screen */
+html, body {
+  overflow-x: hidden !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   1. KEYFRAME ANIMATIONS: COLLISION PUSH-OUT (EXIT)
+   Physics: 
+   0%: Resting position
+   14%: Collision contact / compression impulse against neighbors
+   100%: Energetically propelled out of the webpage past screen borders
+   ───────────────────────────────────────────────────────────── */
+
+/* Top Elements: Push DOWN into content, then launched UP off the screen */
+@keyframes pushOutUp {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  14% {
+    /* Impact collision against elements below */
+    transform: translate3d(0, 24px, 0) scale(0.99);
+    opacity: 1;
+  }
+  100% {
+    /* Propelled violently upward and out */
+    transform: translate3d(0, calc(-100vh - 120px), 0) rotate(-2.5deg);
+    opacity: 0;
+  }
+}
+
+/* Bottom Elements: Push UP into content, then launched DOWN off the screen */
+@keyframes pushOutDown {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  14% {
+    /* Impact collision against elements above */
+    transform: translate3d(0, -24px, 0) scale(0.99);
+    opacity: 1;
+  }
+  100% {
+    /* Propelled violently downward and out */
+    transform: translate3d(0, calc(100vh + 120px), 0) rotate(2.5deg);
+    opacity: 0;
+  }
+}
+
+/* Left Elements: Push RIGHT into adjacent column, then launched LEFT off the screen */
+@keyframes pushOutLeft {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  14% {
+    /* Impact collision against rightward elements */
+    transform: translate3d(28px, 0, 0) scale(0.99);
+    opacity: 1;
+  }
+  100% {
+    /* Propelled violently to the left and out */
+    transform: translate3d(calc(-100vw - 120px), 0, 0) rotate(-6.5deg);
+    opacity: 0;
+  }
+}
+
+/* Right Elements: Push LEFT into adjacent column, then launched RIGHT off the screen */
+@keyframes pushOutRight {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  14% {
+    /* Impact collision against leftward elements */
+    transform: translate3d(-28px, 0, 0) scale(0.99);
+    opacity: 1;
+  }
+  100% {
+    /* Propelled violently to the right and out */
+    transform: translate3d(calc(100vw + 120px), 0, 0) rotate(6.5deg);
+    opacity: 0;
+  }
+}
+
+/* Diagonal Left Elements (Center/Upper): Squeezed and flung top-left */
+@keyframes pushOutDiagLeft {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  14% {
+    transform: translate3d(16px, 16px, 0) scale(0.97);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(calc(-100vw - 100px), -45vh, 0) rotate(-12deg);
+    opacity: 0;
+  }
+}
+
+/* Diagonal Right Elements (Center/Upper): Squeezed and flung top-right */
+@keyframes pushOutDiagRight {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  14% {
+    transform: translate3d(-16px, 16px, 0) scale(0.97);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(calc(100vw + 100px), -45vh, 0) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+/* Center Titles & Features: Squeezed and propelled out with dynamic spin */
+@keyframes pushOutCenterTitle {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  14% {
+    transform: translate3d(0, 15px, 0) scale(0.96);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(35vw, calc(-100vh - 120px), 0) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+/* Modal Box on Index */
+@keyframes pushOutModalBox {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  14% {
+    transform: translate3d(0, -18px, 0) scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, calc(100vh + 100px), 0) rotate(4deg);
+    opacity: 0;
+  }
+}
+
+/* Modal Backdrop clean fade */
+@keyframes fadeModalBackdrop {
+  0% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   2. KEYFRAME ANIMATIONS: NEW PAGE TAKES ITS PLACE (ENTRY)
+   Incoming components slide & settle into their places
+   with spring deceleration (cubic-bezier(0.16, 1, 0.3, 1))
+   ───────────────────────────────────────────────────────────── */
+
+@keyframes takePlaceFromUp {
+  0% {
+    transform: translate3d(0, -90px, 0);
+    opacity: 0;
+  }
+  65% {
+    transform: translate3d(0, 4px, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes takePlaceFromDown {
+  0% {
+    transform: translate3d(0, 85px, 0);
+    opacity: 0;
+  }
+  65% {
+    transform: translate3d(0, -4px, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes takePlaceFromLeft {
+  0% {
+    transform: translate3d(-110px, 0, 0);
+    opacity: 0;
+  }
+  65% {
+    transform: translate3d(6px, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes takePlaceFromRight {
+  0% {
+    transform: translate3d(110px, 0, 0);
+    opacity: 0;
+  }
+  65% {
+    transform: translate3d(-6px, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes takePlaceCenter {
+  0% {
+    transform: scale(0.91);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   3. ACTIVE EXIT STATE (body.page-push-exit)
+   Applied when user clicks a navigation link.
+   Components push against each other and fly out of the webpage.
+   ───────────────────────────────────────────────────────────── */
+
+body.page-push-exit {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+/* TOP COMPONENTS: Header, Top Navigation Trigger */
+body.page-push-exit header,
+body.page-push-exit .tsukuyomi-nav-dropdown,
+body.page-push-exit .main-wrapper .telescope-container,
+body.page-push-exit [data-push="up"] {
+  animation: pushOutUp 0.52s cubic-bezier(0.35, 0, 0.22, 1) 0ms forwards !important;
+  will-change: transform, opacity;
+}
+
+/* CENTER TITLES: App Title on index */
+body.page-push-exit .main-wrapper .app-title {
+  animation: pushOutCenterTitle 0.52s cubic-bezier(0.35, 0, 0.22, 1) 20ms forwards !important;
+  will-change: transform, opacity;
+}
+
+/* LEFT COMPONENTS: Left Column, Panels, Left Side Kanji, Subtitles */
+body.page-push-exit .side-kanji.left,
+body.page-push-exit .col-left,
+body.page-push-exit .col-left > .panel:nth-child(1),
+body.page-push-exit .layout > .panel:first-child,
+body.page-push-exit .dashboard-grid > section.ink-panel,
+body.page-push-exit .topline,
+body.page-push-exit .main-wrapper .subtitle,
+body.page-push-exit .modal-box .nav-table tr:nth-child(odd),
+body.page-push-exit [data-push="left"] {
+  animation: pushOutLeft 0.52s cubic-bezier(0.35, 0, 0.22, 1) 30ms forwards !important;
+  will-change: transform, opacity;
+}
+
+body.page-push-exit .col-left > .panel:nth-child(2) {
+  animation: pushOutLeft 0.52s cubic-bezier(0.35, 0, 0.22, 1) 50ms forwards !important;
+  will-change: transform, opacity;
+}
+
+/* RIGHT COMPONENTS: Right Column, Panels, Right Side Kanji, Divider, Livebar */
+body.page-push-exit .side-kanji.right,
+body.page-push-exit .col-right,
+body.page-push-exit .col-right > .panel:nth-child(1),
+body.page-push-exit .layout > .panel:last-child,
+body.page-push-exit .dashboard-grid > aside.ink-panel,
+body.page-push-exit .livebar,
+body.page-push-exit .main-wrapper .subtitle-jp,
+body.page-push-exit .main-wrapper .katana-divider,
+body.page-push-exit .modal-box .nav-table tr:nth-child(even),
+body.page-push-exit [data-push="right"] {
+  animation: pushOutRight 0.52s cubic-bezier(0.35, 0, 0.22, 1) 40ms forwards !important;
+  will-change: transform, opacity;
+}
+
+body.page-push-exit .col-right > .panel:nth-child(2) {
+  animation: pushOutRight 0.52s cubic-bezier(0.35, 0, 0.22, 1) 60ms forwards !important;
+  will-change: transform, opacity;
+}
+
+body.page-push-exit .col-right > .panel:nth-child(3) {
+  animation: pushOutRight 0.52s cubic-bezier(0.35, 0, 0.22, 1) 75ms forwards !important;
+  will-change: transform, opacity;
+}
+
+/* CENTER / DIAGONAL COMPONENTS: Search Container, Active Banner, Controls */
+body.page-push-exit .search-container,
+body.page-push-exit .controls,
+body.page-push-exit [data-push="diag-left"] {
+  animation: pushOutDiagLeft 0.52s cubic-bezier(0.35, 0, 0.22, 1) 25ms forwards !important;
+  will-change: transform, opacity;
+}
+
+body.page-push-exit .active-banner,
+body.page-push-exit [data-push="diag-right"] {
+  animation: pushOutDiagRight 0.52s cubic-bezier(0.35, 0, 0.22, 1) 30ms forwards !important;
+  will-change: transform, opacity;
+}
+
+/* BOTTOM COMPONENTS: Footer, Enter Button, Modal Box */
+body.page-push-exit footer,
+body.page-push-exit .main-wrapper .enter-btn,
+body.page-push-exit [data-push="down"] {
+  animation: pushOutDown 0.52s cubic-bezier(0.35, 0, 0.22, 1) 60ms forwards !important;
+  will-change: transform, opacity;
+}
+
+body.page-push-exit .modal-box {
+  animation: pushOutModalBox 0.52s cubic-bezier(0.35, 0, 0.22, 1) 15ms forwards !important;
+  will-change: transform, opacity;
+}
+
+body.page-push-exit .modal-overlay {
+  animation: fadeModalBackdrop 0.45s ease 80ms forwards !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   4. ACTIVE ENTRY STATE (body.page-push-enter)
+   Applied on page load.
+   Components arrive from the outside to take their place.
+   ───────────────────────────────────────────────────────────── */
+
+/* TOP COMPONENTS: Slide down and settle into place */
+body.page-push-enter header,
+body.page-push-enter .tsukuyomi-nav-dropdown,
+body.page-push-enter .main-wrapper .telescope-container,
+body.page-push-enter [data-push="up"] {
+  animation: takePlaceFromUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0ms both !important;
+}
+
+/* CENTER / TITLE COMPONENTS: Expand & settle into place */
+body.page-push-enter .main-wrapper .app-title,
+body.page-push-enter .search-container,
+body.page-push-enter .controls,
+body.page-push-enter [data-push="center"] {
+  animation: takePlaceCenter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 40ms both !important;
+}
+
+/* LEFT COMPONENTS: Slide in from left and take their place */
+body.page-push-enter .side-kanji.left,
+body.page-push-enter .col-left,
+body.page-push-enter .col-left > .panel:nth-child(1),
+body.page-push-enter .layout > .panel:first-child,
+body.page-push-enter .dashboard-grid > section.ink-panel,
+body.page-push-enter .topline,
+body.page-push-enter .main-wrapper .subtitle,
+body.page-push-enter [data-push="left"] {
+  animation: takePlaceFromLeft 0.55s cubic-bezier(0.16, 1, 0.3, 1) 50ms both !important;
+}
+
+body.page-push-enter .col-left > .panel:nth-child(2) {
+  animation: takePlaceFromLeft 0.55s cubic-bezier(0.16, 1, 0.3, 1) 85ms both !important;
+}
+
+/* RIGHT COMPONENTS: Slide in from right and take their place */
+body.page-push-enter .side-kanji.right,
+body.page-push-enter .col-right,
+body.page-push-enter .col-right > .panel:nth-child(1),
+body.page-push-enter .layout > .panel:last-child,
+body.page-push-enter .dashboard-grid > aside.ink-panel,
+body.page-push-enter .livebar,
+body.page-push-enter .main-wrapper .subtitle-jp,
+body.page-push-enter .main-wrapper .katana-divider,
+body.page-push-enter [data-push="right"] {
+  animation: takePlaceFromRight 0.55s cubic-bezier(0.16, 1, 0.3, 1) 65ms both !important;
+}
+
+body.page-push-enter .col-right > .panel:nth-child(2) {
+  animation: takePlaceFromRight 0.55s cubic-bezier(0.16, 1, 0.3, 1) 95ms both !important;
+}
+
+body.page-push-enter .col-right > .panel:nth-child(3) {
+  animation: takePlaceFromRight 0.55s cubic-bezier(0.16, 1, 0.3, 1) 125ms both !important;
+}
+
+/* ACTIVE BANNER / DIAGONALS */
+body.page-push-enter .active-banner,
+body.page-push-enter [data-push="diag-right"] {
+  animation: takePlaceCenter 0.55s cubic-bezier(0.16, 1, 0.3, 1) 70ms both !important;
+}
+
+/* BOTTOM COMPONENTS: Rise from bottom and take their place */
+body.page-push-enter footer,
+body.page-push-enter .main-wrapper .enter-btn,
+body.page-push-enter [data-push="down"] {
+  animation: takePlaceFromDown 0.55s cubic-bezier(0.16, 1, 0.3, 1) 100ms both !important;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   5. PREFERS-REDUCED-MOTION ACCESSIBILITY
+   Graceful fade without transforms for users with motion sensitivity
+   ───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  body.page-push-exit * {
+    animation: fadeModalBackdrop 0.3s ease forwards !important;
+    transform: none !important;
+  }
+  body.page-push-enter * {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
